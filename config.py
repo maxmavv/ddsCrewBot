@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #токен бота
-token = '600711835:AAGC-zalWzgprd4KE9iQaUR0cEbxdAkhzGc'
+token = 'token token tokene'
 
 #приветственное сообщение бота
 hello_msg = '''Привет! Я бот для чата DDS. Если тебе это ничего не говорит, иди своей дорогой дальше.
