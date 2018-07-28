@@ -87,7 +87,8 @@ print 'here again'
 def soft_sign_warning(message):
     #print '_ь_', week_day
     #print message.text.encode("utf-8")
-    if week_day == 0:
+    #штрафуем только по понедельникам до часу дня
+    if week_day == 0 and time.localtime().tm_hour < 13:
         bot.reply_to(message, 'ШТРАФ')
 
 #@bot.py.message_handler(content_types=["text"])
