@@ -41,14 +41,6 @@ def send_mumu(message):
     bot.send_message(cid, lunches[1][0])
     bot.send_message(cid, lunches[1][1])
 
-#понедельник - день без мягкого знака
-@bot.message_handler(func=lambda message: tp.soft_sign(message.text.encode("utf-8")) == True)
-def soft_sign_warning(message):
-    #print '_ь_', week_day
-    #print message.text.encode("utf-8")
-    if week_day == 0:
-        bot.reply_to(message, 'ШТРАФ')
-
 #регистрируем человека в списке участников чата по его запросу
 @bot.message_handler(commands=['subscribe'])
 def subscribe(message):
@@ -83,13 +75,20 @@ def ping_all(message):
         if i[1]<>user_id:
             call_text = call_text +' @' +str(i[4])
         print call_text
-
-    bot.send_message(cid, call_text)
+    msg = message.text.encode("utf-8")[4:]
+    bot.send_message(cid, call_text + msg)
 
 print 'here'
 telegram_polling()
 print 'here again'
 
+#понедельник - день без мягкого знака
+@bot.message_handler(func=lambda message: tp.soft_sign(message.text.encode("utf-8")) == True)
+def soft_sign_warning(message):
+    #print '_ь_', week_day
+    #print message.text.encode("utf-8")
+    if week_day == 0:
+        bot.reply_to(message, 'ШТРАФ')
 
 #@bot.py.message_handler(content_types=["text"])
 #def repeat_all_messages(message):
