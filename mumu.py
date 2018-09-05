@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import urllib2
+import urllib
 from lxml import html
 import config as cfg
 
@@ -16,35 +16,40 @@ def generate_url(for_text, week_day, lunch_num, error_url=False):
     # error_url = True - добавлять '-' в конец
     url = ''
     if for_text == 'text' and error_url == True:
-        url = 'https://www.cafemumu.ru/catalog/lanchi/lanch-' + cfg.week[week_day] + '-' + str(lunch_num) + '-'
+        url = 'https://www.cafemumu.ru/catalog/lanchi/lanch-' + \
+            cfg.week[week_day] + '-' + str(lunch_num) + '-'
     if for_text == 'text' and error_url == False:
-        url = 'https://www.cafemumu.ru/catalog/lanchi/lanch-' + cfg.week[week_day] + '-' + str(lunch_num)
+        url = 'https://www.cafemumu.ru/catalog/lanchi/lanch-' + \
+            cfg.week[week_day] + '-' + str(lunch_num)
     if for_text == 'image':
-        url = '<img alt="Ланч ' + cfg.week_rus[week_day] + ' №' + str(lunch_num) + '" class="imgs" itemprop="image" src="'
+        url = '<img alt="Ланч ' + \
+            cfg.week_rus[week_day] + ' №' + \
+            str(lunch_num) + '" class="imgs" itemprop="image" src="'
     return url
 
 
 # находим в html по url текст в теге с составом ланча
 def find_lunch(url):
     try:
-        response = urllib2.urlopen(url)
+        response = urllib.request.urlopen(url)
         html_text = response.read()
         tree = html.fromstring(html_text)
-        lunch = tree.xpath('//*[@id="view-dish"]/div[3]/div/div[3]/span[3]')[0].text
+        lunch = tree.xpath(
+            '//*[@id="view-dish"]/div[3]/div/div[3]/span[3]')[0].text
         return lunch
-    except urllib2.HTTPError:
+    except urllib.error.HTTPError:
         return 'NOT VALID URL!!!'
 
 
 # находим в html ссылку на картинку ланча в теге с картинкой
 def find_lunch_picture(url):
     try:
-        response = urllib2.urlopen(url)
+        response = urllib.request.urlopen(url)
         html_text = response.read()
         tree = html.fromstring(html_text)
         lunch = tree.xpath('//*[@id="view-dish"]/div[3]/div/div[1]/img[1]')[0]
         return lunch.attrib['src']
-    except urllib2.HTTPError:
+    except urllib.error.HTTPError:
         return 'NOT VALID URL!!!'
 
 
@@ -61,7 +66,7 @@ def lunches(week_day):
             url = generate_url('text', week_day, i, error_url=True)
             lunch = find_lunch(url)
         # если одна из двух ссылок сработала, записываем результат, находим картинку
-        if lunch <> 'NOT VALID URL!!!':
+        if lunch != 'NOT VALID URL!!!':
             lunch_res.append('Lunch #' + str(i) + ' ' + lunch)
             url_image = generate_url('image', week_day, i)
             image = find_lunch_picture(url)
