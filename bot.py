@@ -14,7 +14,7 @@ random.seed(time.clock())
 # bot = telebot.TeleBot(cfg.token, threaded=False)
 bot = telebot.TeleBot(cfg.token)
 
-week_day = datetime.datetime.today().weekday()
+# week_day = datetime.datetime.today().weekday()
 
 dinner_time = cfg.dinner_default_time
 dinner_time = datetime.timedelta(hours=dinner_time[0], minutes=dinner_time[1])
@@ -45,7 +45,7 @@ def send_welcome(message):
 @bot.message_handler(commands=['chto_v_mumu'])
 def send_mumu(message):
     cid = message.chat.id
-    # week_day = datetime.datetime.today().weekday()
+    week_day = datetime.datetime.today().weekday()
     lunches = mumu.lunches(week_day)
 
     bot.send_message(cid, lunches[0][0])
@@ -80,7 +80,6 @@ def unsubscribe(message):
 def ping_all(message):
     cid = message.chat.id
     user_id = message.from_user.id
-    # users = db.select_all_from_table(cid)
     users = db.sql_exec(db.sel_all_text, (cid))
     call_text = 'Эй, @all: '
     # бежим по всем юзерам в чате
@@ -143,20 +142,23 @@ def throw_dice(message):
 @bot.message_handler(content_types=["text"])
 def text_parser(message):
     week_day = datetime.datetime.today().weekday()
-    hour_now = time.localtime().tm_hour
+    # нужно брать дату из даты сообщения
+    hour_msg = time.localtime(message.date).tm_hour
+    # текущее время, может пригодиться
+    # hour_now = time.localtime().tm_hour
     cid = message.chat.id
     user_id = message.from_user.id
 
-    # лол кек ахахаха детектор
+    # # лол кек ахахаха детектор
     if tp.lol_kek_detector(message.text) is True:
         if random.random() >= 0.8:
             bot.send_sticker(cid, cfg.stiker_kot_eban)
 
-    # голосование за обед
+    # # голосование за обед
     din_elec = tp.dinner_election(message.text)
     # ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!!!
-    # if din_elec is not None:
-    if week_day not in (5, 6) and hour_now < 12 and din_elec is not None:
+    # if din_elec is not False:
+    if week_day not in (5, 6) and hour_msg < 12 and din_elec is not False:
         user = db.sql_exec(db.sel_election_text, (cid, user_id))
         if len(user) == 0:
             bot.reply_to(message, cfg.err_vote_msg)
@@ -175,8 +177,8 @@ def text_parser(message):
 
             db.sql_exec(db.upd_election_text, (din_elec, cid, user_id))
 
-    # понеделбник - денб без мягкого знака
-    if week_day == 0 and hour_now < 13 and tp.soft_sign(message.text) is True:
+    # # понеделбник - денб без мягкого знака
+    if week_day == 0 and hour_msg < 13 and tp.soft_sign(message.text) is True:
         bot.reply_to(message, 'ШТРАФ')
 
 

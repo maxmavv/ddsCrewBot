@@ -42,21 +42,6 @@ ins_lj_participant_election_text = """INSERT INTO ELECTION
             where elec.participant_id is NULL
             """
 
-# ins_text = """INSERT INTO PARTICIPANT
-#             VALUES (?, ?, ?, ?, ?);
-#             """
-
-# del_text = """DELETE FROM PARTICIPANT WHERE chat_id = ? and participant_id = ?;
-#             """
-
-
-# sel_all_text = """SELECT * FROM PARTICIPANT WHERE chat_id = ? ;
-#             """
-
-
-# sel_text = """SELECT * FROM PARTICIPANT WHERE chat_id = ? and participant_id = ?;
-#             """
-
 ins_text = """INSERT INTO PARTICIPANT
             VALUES ('%d','%d','%s','%s','%s');
             """
@@ -69,7 +54,6 @@ del_election_text = """DELETE FROM ELECTION WHERE chat_id = %d and participant_i
 
 sel_all_text = """SELECT * FROM PARTICIPANT WHERE chat_id = %d ;
             """
-
 
 sel_text = """SELECT * FROM PARTICIPANT WHERE chat_id = %d and participant_id = %d;
             """
@@ -96,15 +80,6 @@ def create_table():
     db.commit()
 
 
-# # выбрать данные из таблицы по конкретному чату-клиенту
-# def select_from_table(chat_id, user_id):
-#     db = sql.connect(cfg.db_name)
-#     cursor = db.cursor()
-#     cursor.execute(sel_text % (chat_id, user_id))
-#     db.commit()
-#     return cursor.fetchall()
-
-
 # выполнить sql запрос
 def sql_exec(select_text, params):
     db = sql.connect(cfg.db_name)
@@ -113,11 +88,12 @@ def sql_exec(select_text, params):
     db.commit()
     return cursor.fetchall()
 
+
 # очистка таблицы голосования, ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!!!
 # print(sql_exec("""UPDATE ELECTION set elec_time = %d""", (0)))
 
 
-# вставить данные в таблицу
+# вставить данные в таблицу participant and election
 def insert_into_table(chat_id, user):
     db = sql.connect(cfg.db_name)
     cursor = db.cursor()
@@ -134,7 +110,7 @@ def insert_into_table(chat_id, user):
     return 1
 
 
-# удалить данные из таблицы по конкретному чату-клиенту
+# удалить данные из таблиц participant and election по конкретному чату-клиенту
 def delete_from_table(chat_id, user_id):
     db = sql.connect(cfg.db_name)
     cursor = db.cursor()
@@ -144,19 +120,10 @@ def delete_from_table(chat_id, user_id):
     db.commit()
 
 
-# выбрать данные из таблицы по конкретному чату
-def select_all_from_table(chat_id):
-    db = sql.connect(cfg.db_name)
-    cursor = db.cursor()
-    cursor.execute(sel_all_text % (chat_id))
-    db.commit()
-    return cursor.fetchall()
-
-
 # создать таблицы, если их нет
 create_table()
 
-# print(select_all_from_table(cfg.dds_chat_id))
+# print(sql_exec(sel_all_text, (cfg.dds_chat_id)))
 
 
 # db = sql.connect(cfg.db_name)
