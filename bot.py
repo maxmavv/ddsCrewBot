@@ -7,6 +7,7 @@ import time
 import datetime
 import database as db
 import random
+# import threading as th
 
 random.seed(time.clock())
 
@@ -14,6 +15,9 @@ random.seed(time.clock())
 bot = telebot.TeleBot(cfg.token)
 
 week_day = datetime.datetime.today().weekday()
+
+dinner_time = cfg.dinner_default_time
+dinner_time = datetime.timedelta(hours=dinner_time[0], minutes=dinner_time[1])
 
 
 # стучимся к серверам ТГ, если не пускает
@@ -76,22 +80,56 @@ def unsubscribe(message):
 def ping_all(message):
     cid = message.chat.id
     user_id = message.from_user.id
-    users = db.select_all_from_table(cid)
+    # users = db.select_all_from_table(cid)
+    users = db.sql_exec(db.sel_all_text, (cid))
     call_text = 'Эй, @all: '
     # бежим по всем юзерам в чате
-    print('users:', users)
+    # print('users:', users)
     for i in users:
-        print(i)
-        print(i[1])
-        print(i[4])
-        print(user_id)
+        # print(i)
+        # print(i[1])
+        # print(i[4])
+        # print(user_id)
         # если юзер не тот, кто вызывал all, уведомляем его
         if i[1] != user_id:
             call_text = call_text + ' @' + str(i[4])
-        print(call_text)
-    # msg = message.text.encode("utf-8")[4:]
-    # bot.send_message(cid, call_text + msg)
-    bot.send_message(cid, call_text + message.text[4:])
+        # print(call_text)
+
+    # проверка на /all@ddsCrewBot
+    if (message.text[0:15] == '/all@ddsCrewBot'):
+        bot.send_message(cid, call_text + message.text[15:])
+    else:
+        bot.send_message(cid, call_text + message.text[4:])
+
+
+# подбросить монетку
+@bot.message_handler(commands=['coin'])
+def throw_coin(message):
+    cid = message.chat.id
+    bot.send_message(cid, random.choice(cfg.precomand_text))
+    time.sleep(1)
+
+    bot.send_message(cid, random.choice(cfg.coin_var))
+
+
+# подбросить кубик
+@bot.message_handler(commands=['dice'])
+def throw_dice(message):
+    cid = message.chat.id
+    bot.send_message(cid, random.choice(cfg.precomand_text))
+    time.sleep(1)
+
+    if len(message.text.split()) == 2 and message.text.split()[1].isdigit():
+        bot.send_message(cid, random.randint(1, int(message.text.split()[1])))
+    else:
+        bot.send_message(cid, random.choice(cfg.dice_var))
+
+
+# показать время обеда
+# @bot.message_handler(commands=['dinner'])
+# def show_dinner_time(message):
+#     cid = message.chat.id
+#     bot.send_message(cid, random.choice(['Легко!', 'Пожалуйста!', 'Запросто!']))
 
 
 # раскомментировать, чтобы узнать file_id стикера
@@ -104,13 +142,41 @@ def ping_all(message):
 
 @bot.message_handler(content_types=["text"])
 def text_parser(message):
+    week_day = datetime.datetime.today().weekday()
+    hour_now = time.localtime().tm_hour
     cid = message.chat.id
-    # лол кек ахахаха
+    user_id = message.from_user.id
+
+    # лол кек ахахаха детектор
     if tp.lol_kek_detector(message.text) is True:
         if random.random() >= 0.8:
-            bot.send_sticker(cid, 'CAADBAADcAAD-OAEAsKXeIPkd1o3Ag')
+            bot.send_sticker(cid, cfg.stiker_kot_eban)
+
+    # голосование за обед
+    din_elec = tp.dinner_election(message.text)
+    # ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!!!
+    # if din_elec is not None:
+    if week_day not in (5, 6) and hour_now < 12 and din_elec is not None:
+        user = db.sql_exec(db.sel_election_text, (cid, user_id))
+        if len(user) == 0:
+            bot.reply_to(message, cfg.err_vote_msg)
+        else:
+            global dinner_time
+            elec_time = datetime.timedelta(minutes=din_elec)
+            dinner_time = dinner_time + elec_time
+
+            # голосование или переголосование
+            if int(user[0][2]) == 0:
+                bot.reply_to(message, cfg.vote_msg + str(dinner_time)[:-3])
+            else:
+                elec_time = datetime.timedelta(minutes=int(user[0][2]))
+                dinner_time = dinner_time - elec_time
+                bot.reply_to(message, cfg.revote_msg + str(dinner_time)[:-3])
+
+            db.sql_exec(db.upd_election_text, (din_elec, cid, user_id))
+
     # понеделбник - денб без мягкого знака
-    if week_day == 0 and time.localtime().tm_hour < 13 and tp.soft_sign(message.text) is True:
+    if week_day == 0 and hour_now < 13 and tp.soft_sign(message.text) is True:
         bot.reply_to(message, 'ШТРАФ')
 
 
