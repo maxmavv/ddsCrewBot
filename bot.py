@@ -7,6 +7,7 @@ import time
 import datetime
 import database as db
 import random
+import event_timer as evt
 # import threading as th
 
 random.seed(time.clock())
@@ -16,8 +17,16 @@ bot = telebot.TeleBot(cfg.token)
 
 # week_day = datetime.datetime.today().weekday()
 
+# обнуляем время голосования
+db.sql_exec(db.reset_election_time_text, (0))
+
+# определяем дефолтное время
 dinner_time = cfg.dinner_default_time
 dinner_time = datetime.timedelta(hours=dinner_time[0], minutes=dinner_time[1])
+cfg.show_din_time = str(dinner_time)[:-3]
+
+# таймер для выдачи времени ботом
+evt.dinner_time_timer(bot)
 
 
 # стучимся к серверам ТГ, если не пускает
@@ -128,7 +137,7 @@ def throw_dice(message):
 # @bot.message_handler(commands=['dinner'])
 # def show_dinner_time(message):
 #     cid = message.chat.id
-#     bot.send_message(cid, random.choice(['Легко!', 'Пожалуйста!', 'Запросто!']))
+#     bot.send_message(cid, str(dinner_time)[:-3])
 
 
 # раскомментировать, чтобы узнать file_id стикера
@@ -175,6 +184,8 @@ def text_parser(message):
                 dinner_time = dinner_time - elec_time
                 bot.reply_to(message, cfg.revote_msg + str(dinner_time)[:-3])
 
+            cfg.show_din_time = str(dinner_time)[:-3]
+            # print('Проголосовали и сейчас время для показа ' + cfg.show_din_time)
             db.sql_exec(db.upd_election_text, (din_elec, cid, user_id))
 
     # # понеделбник - денб без мягкого знака

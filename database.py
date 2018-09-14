@@ -66,6 +66,8 @@ upd_election_text = """UPDATE ELECTION
             WHERE chat_id = %d and participant_id = %d;
             """
 
+reset_election_time_text = """UPDATE ELECTION set elec_time = %d"""
+
 
 # создать таблицу
 def create_table():
@@ -90,6 +92,7 @@ def sql_exec(select_text, params):
 
 
 # очистка таблицы голосования, ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!!!
+# sql_exec(reset_election_time_text, (0))
 # print(sql_exec("""UPDATE ELECTION set elec_time = %d""", (0)))
 
 
