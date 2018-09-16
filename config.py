@@ -3,6 +3,7 @@
 # токен бота вынесен в отдельный файл,
 # чтобы не выкладывать его в открытый доступ
 import tokenBot
+import datetime
 
 # токен бота
 token = tokenBot.token
@@ -16,21 +17,37 @@ hello_msg = '''Привет! Я бот для чата DDS. Если тебе э
 /dice - подбросить кубик
 /subscribe - подписаться на рассылку @all
 /unsubscribe - отписаться от рассылки @all
+/admin_subscribe_for_messages - подписать чат на чтение сообщений
+/admin_unsubscribe_for_messages - отписать чат от чтения сообщений
 '''
 
 # название базы данных пользователей в чатах
 db_name = 'bot_database.db'
 
-# сообщение о подписке на бота
+# сообщение о подписке на бота человеком
 subscribe_msg = '''Принято! Ты подписан на рассылку /all
-и теперь можешь голосвать за время обеда.'''
+и теперь можешь голосвать за время обеда.
+ВНИМАНИЕ! Бот собирает статистику голосования, если тебе это не нравится,
+то ты можешь отписаться командой /unsubscribe в любое время.'''
 
-# сообщение об отписке от бота
+# сообщение об отписке от бота человеком
 unsubscribe_msg = '''Принято! Ты отписан от рассылки /all
 и теперь не можешь голосовать за время обеда.'''
 
-# сообщение о повтороной подписке
+# сообщение о повтороной подписке человеком
 err_subscribe_msg = '''Ты уже подписан! Ты можешь отписаться командой /unsubscribe в любое время.'''
+
+# сообщение о подписке на бота чатом
+subscribe_msg_chatId = '''Принято! Бот читает ваши сообщения:)
+Теперь в вашем чате можно голосовать за время обеда и получать различные напоминания.'''
+
+# сообщение об отписке от бота чатом
+unsubscribe_msg_chatId = '''Принято! Бот больше не читает ваши сообщения:(
+Теперь в вашем чате нельзя голосовать за время обеда и получать различные напоминания.'''
+
+# сообщение о повтороной подписке чатом
+err_subscribe_msg_chatId = '''Ваш чат уже подписан!
+Вы можете отписаться командой /admin_unsubscribe_for_messages в любое время.'''
 
 # сообщение при голосовании
 vote_msg = '''Ты проголосовал! Текущее время '''
@@ -50,6 +67,9 @@ dinner_max_plusminus_time = 25
 # DDS Crew chat_id
 dds_chat_id = -282255340
 
+# список чатов, чьи сообщения бот читает
+subscribed_chats = []
+
 # стикер кот-ебан file_id
 stiker_kot_eban = 'CAADBAADcAAD-OAEAsKXeIPkd1o3Ag'
 
@@ -63,6 +83,24 @@ coin_var = ['Орёл', 'Решка']
 dice_var = ['1', '2', '3', '4', '5', '6']
 
 show_din_time = ''
+
+# текст "доброе утро"
+gm_text = ['С добрым утром, работяги!', 'Мир, труд, май!', 'Ммм... Работка!', 'Нада роботац!']
+
+# текст "уходить с работы"
+bb_text = ['Пора домой!', 'Работать хорошо, но дома лучше!', 'Пора валить!']
+
+# текст "попить"
+pitb_text = ['Может попить? /pitb', 'Просто так напомню, что можно сходить попить... /pitb']
+
+# текст "дсс"
+dss_text = ['Завтра DSS, держу в курсе!']
+
+# текст "покушать"
+eat_text = ['Вроде как 17:00... Может покушать?', 'Что на счёт покушать?']
+
+# текст "обед"
+dinner_text = ['Сегодняшнее время обеда ']
 
 # словарь соответствий номера дня недели и английского/русского названия (для генерации ссылок)
 week = {
@@ -87,5 +125,41 @@ week_rus = {
 }
 
 
-def loglog():
-    pass
+# функция преобразования списка подписавшихся чатов,
+# для более удобного использования
+def subscribed_chats_transform(update):
+    subscribed_chats = []
+    for i in update:
+        subscribed_chats.append(i[0])
+
+
+# логирование команд
+def loglog(**command):
+    def decorator(func):
+        def wrapped(*msg):
+            print('##########', datetime.datetime.now(), command['command'])
+            # print('### Команда', command['command'])
+            if command['type'] == 'message':
+                print('Chat_id =', msg[0].chat.id)
+                print('User =', msg[0].from_user.id)
+            elif command['type'] in ('db_exec', 'db_common'):
+                print('Exec text =', msg[0])
+                print('Params =', msg[1])
+            elif command['type'] == 'sql_chatID':
+                print('Chat_id =', msg[0])
+
+            res = func(*msg)
+            # print('Конец команды', command['command'])
+            print('##########', datetime.datetime.now(), command['command'], '\n')
+            return res
+        return wrapped
+    return decorator
+
+
+# @loglog(command='foo', type='test')
+# def foo(par1, par2):
+#     print('lelkik')
+
+
+# a = ('lel', 'kek')
+# foo(*a)

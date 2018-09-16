@@ -15,10 +15,10 @@ def generate_url(for_text, week_day, lunch_num, error_url=False):
     # иногда вместо 'ponedelnik-1' URL имеет вид 'ponedelnik-1-'
     # error_url = True - добавлять '-' в конец
     url = ''
-    if for_text == 'text' and error_url == True:
+    if for_text == 'text' and error_url is True:
         url = 'https://www.cafemumu.ru/catalog/lanchi/lanch-' + \
             cfg.week[week_day] + '-' + str(lunch_num) + '-'
-    if for_text == 'text' and error_url == False:
+    if for_text == 'text' and error_url is False:
         url = 'https://www.cafemumu.ru/catalog/lanchi/lanch-' + \
             cfg.week[week_day] + '-' + str(lunch_num)
     if for_text == 'image':

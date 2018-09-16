@@ -12,21 +12,18 @@ import event_timer as evt
 
 random.seed(time.clock())
 
-# bot = telebot.TeleBot(cfg.token, threaded=False)
 bot = telebot.TeleBot(cfg.token)
 
 # week_day = datetime.datetime.today().weekday()
-
-# обнуляем время голосования
-db.sql_exec(db.reset_election_time_text, (0))
 
 # определяем дефолтное время
 dinner_time = cfg.dinner_default_time
 dinner_time = datetime.timedelta(hours=dinner_time[0], minutes=dinner_time[1])
 cfg.show_din_time = str(dinner_time)[:-3]
 
-# таймер для выдачи времени ботом
-evt.dinner_time_timer(bot)
+# таймеры
+# evt.dinner_time_timer(bot)
+evt.one_hour_timer(bot)
 
 
 # стучимся к серверам ТГ, если не пускает
@@ -45,6 +42,7 @@ def telegram_polling():
 
 # приветствие
 @bot.message_handler(commands=['start', 'help'])
+@cfg.loglog(command='start/help', type='message')
 def send_welcome(message):
     cid = message.chat.id
     bot.send_message(cid, cfg.hello_msg)
@@ -52,6 +50,7 @@ def send_welcome(message):
 
 # меню в муму
 @bot.message_handler(commands=['chto_v_mumu'])
+@cfg.loglog(command='chto_v_mumu', type='message')
 def send_mumu(message):
     cid = message.chat.id
     week_day = datetime.datetime.today().weekday()
@@ -65,10 +64,11 @@ def send_mumu(message):
 
 # регистрируем человека в списке участников чата по его запросу
 @bot.message_handler(commands=['subscribe'])
+@cfg.loglog(command='subscribe', type='message')
 def subscribe(message):
     cid = message.chat.id
     user = message.from_user
-    res = db.insert_into_table(cid, user)
+    res = db.insert_into_participants(cid, user)
     if res == -1:
         bot.send_message(cid, cfg.err_subscribe_msg)
     else:
@@ -77,31 +77,50 @@ def subscribe(message):
 
 # удаляем человека из списка участников чата по его запросу
 @bot.message_handler(commands=['unsubscribe'])
+@cfg.loglog(command='unsubscribe', type='message')
 def unsubscribe(message):
     cid = message.chat.id
     user_id = message.from_user.id
-    db.delete_from_table(cid, user_id)
+    db.delete_from_participants(cid, user_id)
     bot.send_message(cid, cfg.unsubscribe_msg)
+
+
+# регистрируем чат в рассылки на сообщения ботом
+@bot.message_handler(commands=['admin_subscribe_for_messages'])
+@cfg.loglog(command='admin_subscribe_for_messages', type='message')
+def admin_subscribe_for_dinner(message):
+    cid = message.chat.id
+    res = db.insert_into_chatID(cid)
+    cfg.subscribed_chats_transform(db.sql_exec(db.sel_all_chatID_text, []))
+    if res == -1:
+        bot.send_message(cid, cfg.err_subscribe_msg_chatId)
+    else:
+        bot.send_message(cid, cfg.subscribe_msg_chatId)
+
+
+# удаляем чат из рассылки на сообщения ботом
+@bot.message_handler(commands=['admin_unsubscribe_for_messages'])
+@cfg.loglog(command='admin_unsubscribe_for_messages', type='message')
+def admin_unsubscribe_for_dinner(message):
+    cid = message.chat.id
+    db.delete_from_chatID(cid)
+    cfg.subscribed_chats_transform(db.sql_exec(db.sel_all_chatID_text, []))
+    bot.send_message(cid, cfg.unsubscribe_msg_chatId)
 
 
 # призвать всех
 @bot.message_handler(commands=['all'])
+@cfg.loglog(command='all', type='message')
 def ping_all(message):
     cid = message.chat.id
     user_id = message.from_user.id
-    users = db.sql_exec(db.sel_all_text, (cid))
+    users = db.sql_exec(db.sel_all_text, [cid])
     call_text = 'Эй, @all: '
     # бежим по всем юзерам в чате
-    # print('users:', users)
     for i in users:
-        # print(i)
-        # print(i[1])
-        # print(i[4])
-        # print(user_id)
         # если юзер не тот, кто вызывал all, уведомляем его
         if i[1] != user_id:
-            call_text = call_text + ' @' + str(i[4])
-        # print(call_text)
+            call_text = call_text + '@' + str(i[4]) + ' '
 
     # проверка на /all@ddsCrewBot
     if (message.text[0:15] == '/all@ddsCrewBot'):
@@ -112,6 +131,7 @@ def ping_all(message):
 
 # подбросить монетку
 @bot.message_handler(commands=['coin'])
+@cfg.loglog(command='coin', type='message')
 def throw_coin(message):
     cid = message.chat.id
     bot.send_message(cid, random.choice(cfg.precomand_text))
@@ -122,6 +142,7 @@ def throw_coin(message):
 
 # подбросить кубик
 @bot.message_handler(commands=['dice'])
+@cfg.loglog(command='dice', type='message')
 def throw_dice(message):
     cid = message.chat.id
     bot.send_message(cid, random.choice(cfg.precomand_text))
@@ -156,59 +177,55 @@ def text_parser(message):
     # текущее время, может пригодиться
     # hour_now = time.localtime().tm_hour
     cid = message.chat.id
-    user_id = message.from_user.id
 
-    # # лол кек ахахаха детектор
-    if tp.lol_kek_detector(message.text) is True:
-        if random.random() >= 0.8:
-            bot.send_sticker(cid, cfg.stiker_kot_eban)
+    if cid in cfg.subscribed_chats:
+        user_id = message.from_user.id
 
-    # # голосование за обед
-    din_elec = tp.dinner_election(message.text)
-    # ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!!!
-    # if din_elec is not False:
-    if week_day not in (5, 6) and hour_msg < 12 and din_elec is not False:
-        user = db.sql_exec(db.sel_election_text, (cid, user_id))
-        if len(user) == 0:
-            bot.reply_to(message, cfg.err_vote_msg)
-        else:
-            global dinner_time
-            elec_time = datetime.timedelta(minutes=din_elec)
-            dinner_time = dinner_time + elec_time
+        # # лол кек ахахаха детектор
+        if tp.lol_kek_detector(message.text) is True:
+            print('##########', datetime.datetime.now(), 'lol_kek_detector')
 
-            # голосование или переголосование
-            if int(user[0][2]) == 0:
-                bot.reply_to(message, cfg.vote_msg + str(dinner_time)[:-3])
+            if random.random() >= 0.8:
+                bot.send_sticker(cid, cfg.stiker_kot_eban)
+
+        # # голосование за обед
+        din_elec = tp.dinner_election(message.text)
+        # ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!!!
+        # if din_elec is not False:
+        if week_day not in (5, 6) and hour_msg < 12 and din_elec is not False:
+            print('##########', datetime.datetime.now(), 'dinner_election')
+
+            user = db.sql_exec(db.sel_election_text, [cid, user_id])
+            if len(user) == 0:
+                bot.reply_to(message, cfg.err_vote_msg)
             else:
-                elec_time = datetime.timedelta(minutes=int(user[0][2]))
-                dinner_time = dinner_time - elec_time
-                bot.reply_to(message, cfg.revote_msg + str(dinner_time)[:-3])
+                global dinner_time
+                elec_time = datetime.timedelta(minutes=din_elec)
+                dinner_time = dinner_time + elec_time
 
-            cfg.show_din_time = str(dinner_time)[:-3]
-            # print('Проголосовали и сейчас время для показа ' + cfg.show_din_time)
-            db.sql_exec(db.upd_election_text, (din_elec, cid, user_id))
+                # голосование или переголосование
+                if int(user[0][2]) == 0:
+                    bot.reply_to(message, cfg.vote_msg + str(dinner_time)[:-3])
+                else:
+                    elec_time = datetime.timedelta(minutes=int(user[0][2]))
+                    dinner_time = dinner_time - elec_time
+                    bot.reply_to(message, cfg.revote_msg + str(dinner_time)[:-3])
 
-    # # понеделбник - денб без мягкого знака
-    if week_day == 0 and hour_msg < 13 and tp.soft_sign(message.text) is True:
-        bot.reply_to(message, 'ШТРАФ')
+                cfg.show_din_time = str(dinner_time)[:-3]
+                print('Время обеда', cfg.show_din_time)
+                db.sql_exec(db.upd_election_text, [din_elec, cid, user_id])
+
+        # # понеделбник - денб без мягкого знака
+        if week_day == 0 and hour_msg < 13 and tp.soft_sign(message.text) is True:
+            print('##########', datetime.datetime.now(), 'soft_sign')
+
+            bot.reply_to(message, 'ШТРАФ')
+
+        print('Chat_id =', cid)
+        print('User =', user_id)
+        print('##########', datetime.datetime.now(), '\n')
 
 
 print('here')
 telegram_polling()
 print('here again')
-
-
-# понедельник - день без мягкого знака
-# @bot.message_handler(func=lambda message: tp.soft_sign(message.text.encode("utf-8")) == True)
-# def soft_sign_warning(message):
-#     # print('_ь_', week_day)
-#     # print(message.text.encode("utf-8"))
-#     # штрафуем только по понедельникам до часу дня
-#     if week_day == 0 and time.localtime().tm_hour < 13:
-#         bot.reply_to(message, 'ШТРАФ')
-
-
-# @bot.message_handler(content_types=["text"])
-# def repeat_all_messages(message):
-#     bot.send_message(message.chat.id, message.text)
-#    bot.send_message(message.chat.id, 'Привет!')
