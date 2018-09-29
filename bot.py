@@ -226,5 +226,6 @@ def text_parser(message):
 
 
 print('here')
+bot.remove_webhook()
 telegram_polling()
 print('here again')
