@@ -154,12 +154,3 @@ def loglog(**command):
             return res
         return wrapped
     return decorator
-
-
-# @loglog(command='foo', type='test')
-# def foo(par1, par2):
-#     print('lelkik')
-
-
-# a = ('lel', 'kek')
-# foo(*a)
