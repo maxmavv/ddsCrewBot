@@ -47,6 +47,9 @@ def one_hour_timer(bot):
     # начальное время таймера (60 * 60)
     timer_time = 3600
 
+    # начальная дельта (0)
+    delta = datetime.timedelta(seconds=0)
+
     if str(time_now.time().minute) in ('0'):
         to_show = 1
         if str(time_now.time().second) <= '30':
