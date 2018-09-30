@@ -9,20 +9,23 @@ random.seed(datetime.datetime.now().time().second)
 
 @cfg.loglog(command='call_all', type='bot')
 def call_all():
-    chatUsers = []
+    chatUsers = {}
     for cid in cfg.subscribed_chats:
         users = db.sql_exec(db.sel_all_text, (cid,))
         call_users = 'Эй, @all: '
         for i in users:
             call_users += '@' + str(i[4]) + ' '
-        chatUsers.append(call_users + '\n')
+        chatUsers[cid] = call_users + '\n'
     return chatUsers
 
 
 @cfg.loglog(command='send_msg', type='bot')
-def send_msg(bot, msg):
-    for chat_id in cfg.subscribed_chats:
-        bot.send_message(chat_id, msg)
+def send_msg(bot, msg, cid=None):
+    if cid is None:
+        for chat_id in cfg.subscribed_chats:
+            bot.send_message(chat_id, msg)
+    else:
+        bot.send_message(cid, msg)
 
 
 # @cfg.loglog(command='err_timer', type='bot')
@@ -80,8 +83,8 @@ def one_hour_timer(bot):
             # обед
             if str(time_now.time().hour) == '12':
                 chatUsers = call_all()
-                for cu in chatUsers:
-                    send_msg(bot, cu + random.choice(cfg.dinner_text) + cfg.show_din_time)
+                for cid, msg in chatUsers.items():
+                    send_msg(bot, msg + random.choice(cfg.dinner_text) + cfg.show_din_time, cid)
                     # сохраняем историю голосования
                     db.sql_exec(db.colect_election_hist_text, [str(time_now.date())])
                     # обнуляем время голосования
@@ -103,8 +106,8 @@ def one_hour_timer(bot):
             # напоминать про дсс
             if str(time_now.time().hour) == '19':
                 chatUsers = call_all()
-                for cu in chatUsers:
-                    send_msg(bot, cu + random.choice(cfg.dss_text))
+                for cid, msg in chatUsers.items():
+                    send_msg(bot, msg + random.choice(cfg.dss_text), cid)
 
     # выводим дату для лога
     if str(time_now.time().hour) == '0':
