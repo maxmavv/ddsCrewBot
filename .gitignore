@@ -3,3 +3,4 @@ bot_database.db
 serverInfo.py
 __pycache__/*
 *.pem
+log*

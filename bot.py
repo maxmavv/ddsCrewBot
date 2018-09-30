@@ -8,6 +8,7 @@ import datetime
 import database as db
 import random
 import event_timer as evt
+import webhook
 
 random.seed(time.clock())
 
@@ -23,20 +24,6 @@ cfg.show_din_time = str(dinner_time)[:-3]
 # таймеры
 # evt.dinner_time_timer(bot)
 evt.one_hour_timer(bot)
-
-
-# стучимся к серверам ТГ, если не пускает
-def telegram_polling():
-    try:
-        # constantly get messages from Telegram
-        bot.polling(none_stop=True, timeout=60)
-        print('ok')
-    except Exception as e:
-        # print(e)
-        bot.stop_polling()
-        time.sleep(10)
-        print('try...')
-        telegram_polling()
 
 
 # приветствие
@@ -226,6 +213,5 @@ def text_parser(message):
 
 
 print('here')
-bot.remove_webhook()
-telegram_polling()
+webhook.webhook(bot)
 print('here again')
