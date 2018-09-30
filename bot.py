@@ -77,7 +77,6 @@ def unsubscribe(message):
 def admin_subscribe_for_dinner(message):
     cid = message.chat.id
     res = db.insert_into_chatID(cid)
-    cfg.subscribed_chats_transform(db.sql_exec(db.sel_all_chatID_text, []))
     if res == -1:
         bot.send_message(cid, cfg.err_subscribe_msg_chatId)
     else:
@@ -90,7 +89,6 @@ def admin_subscribe_for_dinner(message):
 def admin_unsubscribe_for_dinner(message):
     cid = message.chat.id
     db.delete_from_chatID(cid)
-    cfg.subscribed_chats_transform(db.sql_exec(db.sel_all_chatID_text, []))
     bot.send_message(cid, cfg.unsubscribe_msg_chatId)
 
 

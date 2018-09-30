@@ -9,11 +9,14 @@ random.seed(datetime.datetime.now().time().second)
 
 @cfg.loglog(command='call_all', type='bot')
 def call_all():
-    users = db.sql_exec(db.sel_all_text, (cfg.dds_chat_id,))
-    call_users = 'Эй, @all: '
-    for i in users:
-        call_users += '@' + str(i[4]) + ' '
-    return str(call_users + '\n')
+    chatUsers = []
+    for cid in cfg.subscribed_chats:
+        users = db.sql_exec(db.sel_all_text, (cid,))
+        call_users = 'Эй, @all: '
+        for i in users:
+            call_users += '@' + str(i[4]) + ' '
+        chatUsers.append(call_users + '\n')
+    return chatUsers
 
 
 @cfg.loglog(command='send_msg', type='bot')
@@ -40,9 +43,6 @@ def one_hour_timer(bot):
 
     # начальное время таймера (60 * 60)
     timer_time = 3600
-
-    # если выводит ошибку, значит не заходит ни в одно время
-    # timer = th.Timer(timer_time, err_timer, args=(bot,))
 
     if str(time_now.time().minute) in ('0'):
         to_show = 1
@@ -79,11 +79,13 @@ def one_hour_timer(bot):
 
             # обед
             if str(time_now.time().hour) == '12':
-                send_msg(bot, call_all() + random.choice(cfg.dinner_text) + cfg.show_din_time)
-                # сохраняем историю голосования
-                db.sql_exec(db.colect_election_hist_text, [str(time_now.date())])
-                # обнуляем время голосования
-                db.sql_exec(db.reset_election_time_text, [0])
+                chatUsers = call_all()
+                for cu in chatUsers:
+                    send_msg(bot, cu + random.choice(cfg.dinner_text) + cfg.show_din_time)
+                    # сохраняем историю голосования
+                    db.sql_exec(db.colect_election_hist_text, [str(time_now.date())])
+                    # обнуляем время голосования
+                    db.sql_exec(db.reset_election_time_text, [0])
 
             # намёк покушать
             if str(time_now.time().hour) == '17':
@@ -100,7 +102,9 @@ def one_hour_timer(bot):
         elif time_now.weekday() == 6:
             # напоминать про дсс
             if str(time_now.time().hour) == '19':
-                send_msg(bot, call_all() + random.choice(cfg.dss_text))
+                chatUsers = call_all()
+                for cu in chatUsers:
+                    send_msg(bot, cu + random.choice(cfg.dss_text))
 
     # выводим дату для лога
     if str(time_now.time().hour) == '0':

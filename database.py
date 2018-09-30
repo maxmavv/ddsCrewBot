@@ -187,6 +187,8 @@ def insert_into_chatID(chat_id):
 
     cursor.execute(ins_chatID_text, [chat_id])
     db.commit()
+    # обновляем список чатов для использования ботом
+    cfg.subscribed_chats_transform(sql_exec(sel_all_chatID_text, []))
     return 1
 
 
@@ -197,6 +199,8 @@ def delete_from_chatID(chat_id):
     cursor = db.cursor()
     cursor.execute(del_chatID_text, [chat_id])
     db.commit()
+    # обновляем список чатов для использования ботом
+    cfg.subscribed_chats_transform(sql_exec(sel_all_chatID_text, []))
 
 
 # создать таблицы, если их нет

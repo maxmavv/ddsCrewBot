@@ -128,7 +128,7 @@ week_rus = {
 # функция преобразования списка подписавшихся чатов,
 # для более удобного использования
 def subscribed_chats_transform(update):
-    subscribed_chats = []
+    subscribed_chats.clear()
     for i in update:
         subscribed_chats.append(i[0])
 
