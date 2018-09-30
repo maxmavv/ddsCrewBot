@@ -1,0 +1,5 @@
+tokenBot.py
+bot_database.db
+serverInfo.py
+__pycache__/*
+*.pem
