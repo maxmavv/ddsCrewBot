@@ -4,6 +4,8 @@ import telebot
 import serverInfo as si
 import config as cfg
 
+import random
+
 
 @cfg.loglog(command='webhook', type='')
 def webhook(bot):
@@ -19,6 +21,13 @@ def webhook(bot):
             return web.Response(status=403)
 
     app.router.add_post('/{}/'.format(bot.token), handle)
+
+    @bot.message_handler(commands=['coin'])
+    @cfg.loglog(command='coin', type='message')
+    def throw_coin(message):
+        cid = message.chat.id
+        bot.send_message(cid, random.choice(cfg.precomand_text))
+        bot.send_message(cid, random.choice(cfg.coin_var))
 
     bot.remove_webhook()
 
