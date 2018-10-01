@@ -155,6 +155,8 @@ def throw_dice(message):
 
 @bot.message_handler(content_types=["text"])
 def text_parser(message):
+    print('##########', datetime.datetime.now(), 'text_parser')
+
     week_day = datetime.datetime.today().weekday()
     # нужно брать дату из даты сообщения
     hour_msg = time.localtime(message.date).tm_hour
@@ -171,6 +173,7 @@ def text_parser(message):
 
             if random.random() >= 0.8:
                 bot.send_sticker(cid, cfg.stiker_kot_eban)
+                print('Sent!')
 
         # # голосование за обед
         din_elec = tp.dinner_election(message.text)
@@ -179,20 +182,21 @@ def text_parser(message):
         if week_day not in (5, 6) and hour_msg < 12 and din_elec is not False:
             print('##########', datetime.datetime.now(), 'dinner_election')
 
+            print('Din_elec =', din_elec)
             user = db.sql_exec(db.sel_election_text, [cid, user_id])
             if len(user) == 0:
                 bot.reply_to(message, cfg.err_vote_msg)
             else:
                 global dinner_time
                 elec_time = datetime.timedelta(minutes=din_elec)
-                dinner_time = dinner_time + elec_time
+                dinner_time += elec_time
 
                 # голосование или переголосование
                 if int(user[0][2]) == 0:
                     bot.reply_to(message, cfg.vote_msg + str(dinner_time)[:-3])
                 else:
                     elec_time = datetime.timedelta(minutes=int(user[0][2]))
-                    dinner_time = dinner_time - elec_time
+                    dinner_time -= elec_time
                     bot.reply_to(message, cfg.revote_msg + str(dinner_time)[:-3])
 
                 cfg.show_din_time = str(dinner_time)[:-3]
@@ -204,6 +208,7 @@ def text_parser(message):
             print('##########', datetime.datetime.now(), 'soft_sign')
 
             bot.reply_to(message, 'ШТРАФ')
+            print('ШТРАФ')
 
         print('Chat_id =', cid)
         print('User =', user_id)
