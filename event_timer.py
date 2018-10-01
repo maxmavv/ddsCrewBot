@@ -15,7 +15,7 @@ def call_all():
         call_users = 'Эй, @all: '
         for i in users:
             call_users += '@' + str(i[4]) + ' '
-        chatUsers[cid] = call_users + '\n'
+        chatUsers[cid] = call_users.strip() + '\n'
     return chatUsers
 
 
@@ -79,9 +79,10 @@ def one_hour_timer(bot):
     if to_show == 1:
         # будние дни
         if time_now.weekday() not in (5, 6):
-            # доброе утро
+            # доброе утро и вызвать pidora
             if str(time_now.time().hour) == '9':
                 send_msg(bot, random.choice(cfg.gm_text))
+                send_msg(bot, '/pidor@SublimeBot')
 
             # обед
             if str(time_now.time().hour) == '12':
@@ -101,8 +102,8 @@ def one_hour_timer(bot):
             if str(time_now.time().hour) == '19':
                 send_msg(bot, random.choice(cfg.bb_text))
 
-            # раз в час намекать на попить
-            if str(time_now.time().hour) >= '10' and str(time_now.time().hour) <= '18':
+            # в определённое время намекать на попить
+            if str(time_now.time().hour) in ('11', '14', '16', '18'):
                 send_msg(bot, random.choice(cfg.pitb_text))
         # выходные
         elif time_now.weekday() == 6:

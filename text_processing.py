@@ -5,7 +5,7 @@ import re
 
 # проверка на мягкий знак в сообщении
 def soft_sign(msg):
-    res = re.match('.*ь.*', msg)
+    res = re.search('ь', msg, flags=re.M)
     if res is None:
         return False
     else:
@@ -13,7 +13,7 @@ def soft_sign(msg):
 
 
 def lol_kek_detector(msg):
-    res = re.match('.*((л[о|е|у|и|а]+л)|(к[е|и]+к)|((ахах)+|(хаха)+)|(l[o|e|i]+l)|(k[e|i]+k))+.*', msg, flags=re.I)
+    res = re.search('((л[о|е|у|и|а]+л)|(к[е|и|э]+к)|((ахах)+|(хаха)+)|(ору)+|(l[o|e|i]+l)|(k[e|i]+k))+', msg, flags=re.I)
     if res is None:
         return False
     else:

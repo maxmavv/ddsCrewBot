@@ -108,9 +108,9 @@ def ping_all(message):
 
     # проверка на /all@ddsCrewBot
     if (message.text[0:15] == '/all@ddsCrewBot'):
-        bot.send_message(cid, call_text + message.text[15:])
+        bot.send_message(cid, call_text.strip() + message.text[15:])
     else:
-        bot.send_message(cid, call_text + message.text[4:])
+        bot.send_message(cid, call_text.strip() + message.text[4:])
 
 
 # подбросить монетку
