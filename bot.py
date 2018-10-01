@@ -200,7 +200,7 @@ def text_parser(message):
                 db.sql_exec(db.upd_election_text, [din_elec, cid, user_id])
 
         # # понеделбник - денб без мягкого знака
-        if week_day == 0 and hour_msg < 13 and tp.soft_sign(message.text) is True:
+        if week_day == 0 and hour_msg < 12 and tp.soft_sign(message.text) is True:
             print('##########', datetime.datetime.now(), 'soft_sign')
 
             bot.reply_to(message, 'ШТРАФ')
