@@ -138,6 +138,14 @@ def throw_dice(message):
         bot.send_message(cid, random.choice(cfg.dice_var))
 
 
+# магический шар
+@bot.message_handler(commands=['ball'])
+@cfg.loglog(command='ball', type='message')
+def magic_ball(message):
+    cid = message.chat.id
+    bot.send_message(cid, random.choice(cfg.ball_var))
+
+
 # показать время обеда
 # @bot.message_handler(commands=['dinner'])
 # def show_dinner_time(message):
