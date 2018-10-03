@@ -162,19 +162,17 @@ def magic_ball(message):
 
 
 @bot.message_handler(content_types=["text"])
+@cfg.loglog(command='text_parser', type='message')
 def text_parser(message):
-    print('##########', datetime.datetime.now(), 'text_parser')
-
     week_day = datetime.datetime.today().weekday()
     # нужно брать дату из даты сообщения
     hour_msg = time.localtime(message.date).tm_hour
     # текущее время, может пригодиться
     # hour_now = time.localtime().tm_hour
     cid = message.chat.id
+    user_id = message.from_user.id
 
     if cid in cfg.subscribed_chats:
-        user_id = message.from_user.id
-
         # # лол кек ахахаха детектор
         if tp.lol_kek_detector(message.text) is True:
             print('##########', datetime.datetime.now(), 'lol_kek_detector')
@@ -218,8 +216,6 @@ def text_parser(message):
             bot.reply_to(message, 'ШТРАФ')
             print('ШТРАФ')
 
-        print('Chat_id =', cid)
-        print('User =', user_id)
         print('##########', datetime.datetime.now(), '\n')
 
 
