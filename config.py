@@ -64,6 +64,7 @@ err_vote_msg = '''Ты не можешь голосовать за время о
 # дефолтное время обеда (часы, минуты)
 dinner_default_time = (12, 45)
 dinner_max_plusminus_time = 25
+dinner_time = 0
 
 # DDS Crew chat_id
 dds_chat_id = -282255340

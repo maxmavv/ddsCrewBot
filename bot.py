@@ -17,9 +17,9 @@ bot = telebot.TeleBot(cfg.token)
 # week_day = datetime.datetime.today().weekday()
 
 # определяем дефолтное время
-dinner_time = cfg.dinner_default_time
-dinner_time = datetime.timedelta(hours=dinner_time[0], minutes=dinner_time[1])
-cfg.show_din_time = str(dinner_time)[:-3]
+cfg.dinner_time = cfg.dinner_default_time
+cfg.dinner_time = datetime.timedelta(hours=cfg.dinner_time[0], minutes=cfg.dinner_time[1])
+cfg.show_din_time = str(cfg.dinner_time)[:-3]
 
 # таймеры
 # evt.dinner_time_timer(bot)
@@ -150,7 +150,7 @@ def magic_ball(message):
 # @bot.message_handler(commands=['dinner'])
 # def show_dinner_time(message):
 #     cid = message.chat.id
-#     bot.send_message(cid, str(dinner_time)[:-3])
+#     bot.send_message(cid, str(cfg.dinner_time)[:-3])
 
 
 # раскомментировать, чтобы узнать file_id стикера
@@ -193,19 +193,19 @@ def text_parser(message):
             if len(user) == 0:
                 bot.reply_to(message, cfg.err_vote_msg)
             else:
-                global dinner_time
+                # global cfg.dinner_time
                 elec_time = datetime.timedelta(minutes=din_elec)
-                dinner_time += elec_time
+                cfg.dinner_time += elec_time
 
                 # голосование или переголосование
                 if int(user[0][2]) == 0:
-                    bot.reply_to(message, cfg.vote_msg + str(dinner_time)[:-3])
+                    bot.reply_to(message, cfg.vote_msg + str(cfg.dinner_time)[:-3])
                 else:
                     elec_time = datetime.timedelta(minutes=int(user[0][2]))
-                    dinner_time -= elec_time
-                    bot.reply_to(message, cfg.revote_msg + str(dinner_time)[:-3])
+                    cfg.dinner_time -= elec_time
+                    bot.reply_to(message, cfg.revote_msg + str(cfg.dinner_time)[:-3])
 
-                cfg.show_din_time = str(dinner_time)[:-3]
+                cfg.show_din_time = str(cfg.dinner_time)[:-3]
                 print('Время обеда', cfg.show_din_time)
                 db.sql_exec(db.upd_election_text, [din_elec, cid, user_id])
 

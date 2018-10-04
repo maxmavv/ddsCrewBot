@@ -93,6 +93,10 @@ def one_hour_timer(bot):
                     db.sql_exec(db.colect_election_hist_text, [str(time_now.date())])
                     # обнуляем время голосования
                     db.sql_exec(db.reset_election_time_text, [0])
+                    # обнуляем время голосовния в боте
+                    cfg.dinner_time = cfg.dinner_default_time
+                    cfg.dinner_time = datetime.timedelta(hours=cfg.dinner_time[0], minutes=cfg.dinner_time[1])
+                    cfg.show_din_time = str(cfg.dinner_time)[:-3]
 
             # намёк покушать
             if str(time_now.time().hour) == '17':
