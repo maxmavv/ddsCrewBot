@@ -158,10 +158,10 @@ def magic_ball(message):
 
 # раскомментировать, чтобы узнать file_id стикера
 # @bot.message_handler(content_types=["sticker"])
-# def get_stiker(message):
+# def get_sticker(message):
 #     print(message.sticker.file_id)
 #     cid = message.chat.id
-#     bot.send_sticker(cid, 'CAADBAADcAAD-OAEAsKXeIPkd1o3Ag')
+#     bot.send_sticker(cid, random.choice(cfg.sticker_var))
 
 
 @bot.message_handler(content_types=["text"])
@@ -181,7 +181,7 @@ def text_parser(message):
             print('##########', datetime.datetime.now(), 'lol_kek_detector')
 
             if random.random() >= 0.8:
-                bot.send_sticker(cid, cfg.stiker_kot_eban)
+                bot.send_sticker(cid, random.choice(cfg.sticker_var))
                 print('Sent!')
 
         # # голосование за обед

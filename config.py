@@ -72,8 +72,10 @@ dds_chat_id = -282255340
 # список чатов, чьи сообщения бот читает
 subscribed_chats = []
 
-# стикер кот-ебан file_id
-stiker_kot_eban = 'CAADBAADcAAD-OAEAsKXeIPkd1o3Ag'
+# список стикеров
+sticker_var = ['CAADBAADcAAD-OAEAsKXeIPkd1o3Ag', 'CAADAgADAgADwXKkBLMxNUOXvJrUAg',
+               'CAADAgADAQADwXKkBKKoPDv9KrHpAg', 'CAADAgADBwADwXKkBDaH1tzzKIZdAg',
+               'CAADAgADAwADwXKkBDjiVNM0pYEPAg']
 
 # прекомандный текст
 precomand_text = ['Легко!', 'Пожалуйста!', 'Запросто!', 'Ложись!', 'Лови!', 'Конечно!']
