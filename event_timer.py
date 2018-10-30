@@ -3,6 +3,7 @@ import datetime
 import config as cfg
 import database as db
 import random
+import time
 
 random.seed(datetime.datetime.now().time().second)
 
@@ -28,13 +29,124 @@ def send_msg(bot, msg, cid=None):
         bot.send_message(cid, msg)
 
 
-# @cfg.loglog(command='err_timer', type='bot')
-# def err_timer(bot):
-#     print('Error with dinner timer!!')
-#     timer = th.Timer(60 * 60, one_hour_timer, args=(bot,))
-#     timer.start()
+@cfg.loglog(command='check_metadata', type='bot')
+def check_metadata(bot):
+    time_now = datetime.datetime.now()
+    # выбираем все активные строки из метаданных
+    meta = db.sql_exec("""SELECT * FROM METADATA
+            WHERE operation in (0, 1) and is_success_flg = ?""", [1])
 
-#     send_msg(bot, 'Ошибка вычисления таймера, проверь меня!')
+    for m in meta:
+        # '%Y-%m-%d %H:%M:%S'
+        dttm = datetime.datetime.strptime(m[6], '%Y-%m-%d %H:%M:%S')
+
+        if (dttm.date() == time_now.date()) and (dttm.time() >= time_now.time()):
+            # штрафы
+            if m[1] == 0:
+                print(m)
+                if m[4] >= 0:
+                    # вычисляем дату исполнения
+                    hh = 72
+                    if time_now.weekday() in (3, 4):
+                        hh = 120
+                    elif time_now.weekday() == 5:
+                        hh = 96
+
+                    delta = datetime.timedelta(hours=hh, minutes=5)
+                    expire_date = time_now + delta
+
+                    db.sql_exec(db.ins_operation_meta_text,
+                                [cfg.max_id_rk, 0, m[2], m[3], - int(m[4]),
+                                 str(time_now)[:-7], str(expire_date)[:-7], 1])
+                    cfg.max_id_rk += 1
+
+                user = db.sql_exec(db.sel_election_text, [m[2], m[3]])
+                if len(user) == 0:
+                    # обновляем строку в метаданных как ошибочную
+                    db.sql_exec(db.upd_operation_meta_text, [2, m[0]])
+                    print('!!! ОШИБКА, НЕТ ЮЗЕРА В БАЗЕ ДЛЯ ' + str(m[2]) + ' ' + str(m[3]) + ' !!!')
+                else:
+                    penalty = int(user[0][3]) + int(m[4])
+
+                    if penalty < 0:
+                        penalty = 0
+                    elif penalty > 25:
+                        penalty = 25
+
+                    # ставим/убираем штраф
+                    db.sql_exec(db.upd_election_penalty_text, [penalty, m[2], m[3]])
+                    # обновляем строку в метаданных как успешно отработавшую
+                    db.sql_exec(db.upd_operation_meta_text, [0, m[0]])
+
+                print(db.sql_exec("""SELECT * FROM METADATA""", []))
+                print(db.sql_exec("""SELECT * FROM ELECTION""", []))
+            # воронков
+            elif m[1] == 1:
+                dttmt = dttm.time()
+                expire_time = datetime.timedelta(hours=dttmt.hour, minutes=dttmt.minute,
+                                                 seconds=dttmt.second)
+
+                dttmt_now = time_now.time()
+                time_now_delta = datetime.timedelta(hours=dttmt_now.hour, minutes=dttmt_now.minute,
+                                                    seconds=dttmt_now.second)
+                delta = expire_time - time_now_delta
+
+                delta = int(delta.total_seconds()) + 1
+
+                th.Timer(delta, voronkov_timer, args=(bot, m,)).start()
+        elif dttm < time_now:
+            # обновляем строку в метаданных как ошибочную (не выполнилась в нужную дату или время)
+            db.sql_exec(db.upd_operation_meta_text, [2, m[0]])
+            print('!!! ОШИБОЧНАЯ СТРОКА В ТАБЛИЦЕ МЕТАДАННЫХ !!!')
+            print(m)
+
+            # команду штрафа надо применить в любом случае
+            if m[1] == 0:
+                cfg.meta_error_flg = 1
+
+                delta = datetime.timedelta(minutes=10)
+                expire_date = time_now + delta
+
+                db.sql_exec(db.ins_operation_meta_text,
+                            [cfg.max_id_rk, 0, m[2], m[3], m[4],
+                             str(time_now)[:-7], str(expire_date)[:-7], 1])
+                cfg.max_id_rk += 1
+
+
+@cfg.loglog(command='voronkov_timer', type='bot')
+def voronkov_timer(bot, meta):
+    # print(meta)
+
+    user = db.sql_exec(db.sel_text, [meta[2], meta[3]])
+
+    if user == []:
+        users = db.sql_exec(db.sel_all_text, [meta[2]])
+        if users != []:
+            user = random.choice(users)
+            print('! НЕТ ТЕКУЩЕГО ЮЗЕРА, БЫЛ ВЫБРАН ДРУГОЙ !')
+        else:
+            # обновляем строку в метаданных как ошибочную
+            db.sql_exec(db.upd_operation_meta_text, [2, meta[0]])
+            print('!!! ОШИБКА, НЕТ ЮЗЕРОВ В БАЗЕ ДЛЯ CHAT_ID = ' + str(meta[2]) + ' !!!')
+            return
+
+    user = '@' + user[0][4]
+
+    scenario = random.choice(cfg.voronkov_text)
+    print(scenario)
+
+    send_msg(bot, user + scenario[0], meta[2])
+    time.sleep(1)
+    send_msg(bot, scenario[1], meta[2])
+    time.sleep(1)
+    send_msg(bot, scenario[2] + str(random.randint(10000, 19999)), meta[2])
+    time.sleep(1)
+    send_msg(bot, scenario[3], meta[2])
+    bot.send_sticker(meta[2], cfg.stiker_voronkov)
+
+    # обновляем строку в метаданных как успешно отработавшую
+    db.sql_exec(db.upd_operation_meta_text, [0, meta[0]])
+    print(db.sql_exec("""SELECT * FROM METADATA""", []))
 
 
 @cfg.loglog(command='one_hour_timer', type='bot')
@@ -93,14 +205,10 @@ def one_hour_timer(bot):
                     db.sql_exec(db.colect_election_hist_text, [str(time_now.date())])
                     # обнуляем время голосования
                     db.sql_exec(db.reset_election_time_text, [0])
-                    # обнуляем время голосовния в боте
-                    cfg.dinner_time = cfg.dinner_default_time
-                    cfg.dinner_time = datetime.timedelta(hours=cfg.dinner_time[0], minutes=cfg.dinner_time[1])
-                    cfg.show_din_time = str(cfg.dinner_time)[:-3]
 
-            # намёк покушать
-            if str(time_now.time().hour) == '17':
-                send_msg(bot, random.choice(cfg.eat_text))
+            # # намёк покушать
+            # if str(time_now.time().hour) == '17':
+            #     send_msg(bot, random.choice(cfg.eat_text))
 
             # пора уходить с работы
             if str(time_now.time().hour) == '19':
@@ -117,71 +225,45 @@ def one_hour_timer(bot):
                 for cid, msg in chatUsers.items():
                     send_msg(bot, msg + random.choice(cfg.dss_text), cid)
 
-    # выводим дату для лога
+            # поставить таймер на воронкова
+            if str(time_now.time().hour) == '23':
+                # оставляем небольшой запас времени на вычисления
+                # 1 минута и 10 секунд
+                hh = random.randint(1, 119)
+                mm = random.randint(1, 58)
+                ss = random.randint(0, 50)
+
+                # вычисляем дату исполнения
+                delta = datetime.timedelta(hours=hh, minutes=mm, seconds=ss)
+                expire_date = time_now + delta
+
+                for cid in cfg.subscribed_chats:
+                    users = db.sql_exec(db.sel_all_text, (cid,))
+                    if users != []:
+                        call_user = random.choice(users)[1]
+
+                        # добавляем строку воронкова в метаданные для каждого чата
+                        db.sql_exec(db.ins_operation_meta_text,
+                                    [cfg.max_id_rk, 1, cid, call_user, -1,
+                                     str(time_now)[:-7], str(expire_date)[:-7], 1])
+                        cfg.max_id_rk += 1
+                    else:
+                        print('! ОШИБКА, НЕТ ЮЗЕРОВ В БАЗЕ ДЛЯ CHAT_ID = ' + str(cid) + ' !')
+
+    # выводим дату для лога и выполняем системные сбросы и таймеры
     if str(time_now.time().hour) == '0':
         print('New day!', time_now)
 
+        # проверяем метаданные и выставляем таймеры
+        check_metadata(bot)
 
-# def dinner_time_timer(bot):
-#     time_now = datetime.datetime.now()
+        # если произошла ошибка с выставлением штрафа,
+        # нужно проверить метаданные ещё раз
+        if cfg.meta_error_flg == 1:
+            cfg.meta_error_flg = 0
+            check_metadata(bot)
 
-#     # флаг, который говорит, показывать ли время (показывает, когда 1)
-#     to_show = 0
-
-#     # начальное время таймера (24 * 60 * 60)
-#     timer_time = 84400
-
-#     # если выводит ошибку, значит не заходит ни в одно время
-#     timer = th.Timer(timer_time, err_timer, args=(bot,))
-
-#     # if str(time_now.time())[:8] >= '22:08:00' and str(time_now.time())[:8] <= '22:09:00':
-#     if str(time_now.time())[:8] >= '12:00:00' and str(time_now.time())[:8] <= '12:01:00':
-#         if time_now.weekday() not in (5, 6):
-#             to_show = 1
-#             # будние дни
-#             if str(time_now.time())[6:8] <= '30':
-#                 # нормальная работа
-#                 # print('Я работаю нормально!!')
-#                 timer = th.Timer(timer_time, dinner_time_timer, args=(bot,))
-#             else:
-#                 # случай для возможного увеличения времени из-за расчётов программы
-#                 timer_time -= 29
-#                 timer = th.Timer(timer_time, dinner_time_timer, args=(bot,))
-#         else:
-#             # выходные, увеличиваем сразу на 2 дня, если суббота
-#             # и на 1 день, если воскресенье
-#             timer_time *= (7 - time_now.weekday())
-#             timer = th.Timer(timer_time, dinner_time_timer, args=(bot,))
-#     else:
-#         # рандомное время, например, при запуске бота
-#         # высчитываем время до 12:00:01
-#         # common_time = datetime.timedelta(hours=22, minutes=8, seconds=0)
-#         common_time = datetime.timedelta(hours=12, minutes=0, seconds=0)
-#         cur_time = datetime.timedelta(hours=time_now.time().hour,
-#             minutes=time_now.time().minute, seconds=time_now.time().second)
-#         full_day = datetime.timedelta(hours=24, minutes=0, seconds=0)
-
-#         delta = datetime.timedelta()
-#         if cur_time > common_time:
-#             delta = full_day - cur_time + common_time
-#         else:
-#             delta = common_time - cur_time
-
-#         timer_time = int(delta.total_seconds()) + 1
-
-#         timer = th.Timer(timer_time, dinner_time_timer, args=(bot,))
-
-#     timer.start()
-
-#     # print(time_now.date())
-#     # print(cur_time, common_time, delta)
-#     print(timer_time)
-#     # print(cfg.show_din_time)
-
-#     if to_show == 1:
-#         bot.send_message(cfg.dds_chat_id, call_all() + 'Время обеда: ' + cfg.show_din_time)
-
-#         # сохраняем историю голосования
-#         db.sql_exec(db.colect_election_hist_text, [str(time_now.date())])
-#         # обнуляем время голосования
-#         db.sql_exec(db.reset_election_time_text, [0])
+        # обнуляем время голосовния в боте
+        cfg.dinner_time = cfg.dinner_default_time
+        cfg.dinner_time = datetime.timedelta(hours=cfg.dinner_time[0], minutes=cfg.dinner_time[1])
+        cfg.show_din_time = str(cfg.dinner_time)[:-3]

@@ -24,6 +24,7 @@ cfg.show_din_time = str(cfg.dinner_time)[:-3]
 # таймеры
 # evt.dinner_time_timer(bot)
 evt.one_hour_timer(bot)
+evt.check_metadata(bot)
 
 
 # приветствие
@@ -150,10 +151,62 @@ def magic_ball(message):
 
 
 # показать время обеда
-# @bot.message_handler(commands=['dinner'])
-# def show_dinner_time(message):
-#     cid = message.chat.id
-#     bot.send_message(cid, str(cfg.dinner_time)[:-3])
+@bot.message_handler(commands=['dinner'])
+@cfg.loglog(command='dinner', type='message')
+def show_dinner_time(message):
+    cid = message.chat.id
+    bot.send_message(cid, random.choice(cfg.dinner_text) + cfg.show_din_time)
+
+
+# показать/оставить штрафы
+@bot.message_handler(commands=['penalty'])
+@cfg.loglog(command='penalty', type='message')
+def penalty(message):
+    time_now = datetime.datetime.now()
+    cid = message.chat.id
+    pen = db.sql_exec(db.sel_all_penalty_time_text, [cid])
+
+    cmd = message.text.split()
+    flg = 0
+
+    if (len(cmd) == 3) and (not cmd[1].isdigit()) and (cmd[2].isdigit()):
+        for user in pen:
+            if user[0] == cmd[1][1:]:
+                flg = 1
+
+                if user[2] == message.from_user.id:
+                    bot.send_message(cid, 'Нельзя ставить штрафы самому себе!')
+                    break
+
+                penalty_time = abs(int(cmd[2]))
+                if penalty_time != 0:
+                    if penalty_time >= 25:
+                        bot.send_message(cid, 'Я не ставлю штрафы больше чем на 25 минут!')
+                    else:
+                        bot.send_message(cid, 'Поставил штраф ' + str(cmd[1]) + ' ' +
+                                         str(penalty_time) + ' мин')
+
+                        # добавляем строку штрафа в метаданные
+                        delta = datetime.timedelta(hours=24)
+                        expire_date = time_now + delta
+
+                        db.sql_exec(db.ins_operation_meta_text,
+                                    [cfg.max_id_rk, 0, cid, user[2], penalty_time,
+                                     str(time_now)[:-7], str(expire_date)[:-7], 1])
+                        cfg.max_id_rk += 1
+                else:
+                    bot.send_message(cid, 'Я не ставлю штрафы 0 минут!')
+                break
+
+        if flg == 0:
+            bot.send_message(cid, 'Я не нашёл ' + str(cmd[1]) + ' в базе...\n' +
+                             'Проверь написание ника!\n' +
+                             'Ну, или может быть этот этот человек ещё не подписался?')
+    else:
+        pen_msg = 'Штрафы на сегодня:\n'
+        for user in pen:
+            pen_msg += '@' + str(user[0]) + ' — ' + str(user[1]) + ' мин\n'
+        bot.send_message(cid, pen_msg)
 
 
 # раскомментировать, чтобы узнать file_id стикера
@@ -196,21 +249,49 @@ def text_parser(message):
             if len(user) == 0:
                 bot.reply_to(message, cfg.err_vote_msg)
             else:
-                # global cfg.dinner_time
-                elec_time = datetime.timedelta(minutes=din_elec)
-                cfg.dinner_time += elec_time
+                penalty_time = int(user[0][3])
+
+                final_elec_time = 0
+                sign = 1
+
+                if din_elec != 0:
+                    sign = (din_elec / abs(din_elec))
+                    final_elec_time = din_elec - sign * penalty_time
+
+                if abs(final_elec_time) > 25:
+                    final_elec_time = sign * 25
+
+                if (sign * final_elec_time < 0):
+                    final_elec_time = 0
+
+                final_elec_time = datetime.timedelta(minutes=final_elec_time)
+                cfg.dinner_time += final_elec_time
 
                 # голосование или переголосование
                 if int(user[0][2]) == 0:
                     bot.reply_to(message, cfg.vote_msg + str(cfg.dinner_time)[:-3])
                 else:
-                    elec_time = datetime.timedelta(minutes=int(user[0][2]))
-                    cfg.dinner_time -= elec_time
+                    final_elec_time = 0
+                    prev_din_elec = int(user[0][2])
+                    sign = 1
+
+                    if prev_din_elec != 0:
+                        sign = (prev_din_elec / abs(prev_din_elec))
+                        final_elec_time = prev_din_elec - sign * penalty_time
+
+                    if abs(final_elec_time) > 25:
+                        final_elec_time = sign * 25
+
+                    if (sign * final_elec_time < 0):
+                        final_elec_time = 0
+
+                    final_elec_time = datetime.timedelta(minutes=final_elec_time)
+                    cfg.dinner_time -= final_elec_time
                     bot.reply_to(message, cfg.revote_msg + str(cfg.dinner_time)[:-3])
 
                 cfg.show_din_time = str(cfg.dinner_time)[:-3]
                 print('Время обеда', cfg.show_din_time)
-                db.sql_exec(db.upd_election_text, [din_elec, cid, user_id])
+                db.sql_exec(db.upd_election_elec_text, [din_elec, cid, user_id])
 
         # # понеделбник - денб без мягкого знака
         if week_day == 0 and hour_msg < 12 and tp.soft_sign(message.text) is True:
