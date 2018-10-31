@@ -205,7 +205,7 @@ def penalty(message):
     else:
         pen_msg = 'Штрафы на сегодня:\n'
         for user in pen:
-            pen_msg += '@' + str(user[0]) + ' — ' + str(user[1]) + ' мин\n'
+            pen_msg += str(user[0]) + ' — ' + str(user[1]) + ' мин\n'
         bot.send_message(cid, pen_msg)
 
 
