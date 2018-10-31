@@ -34,36 +34,17 @@ ct_chatID_text = """CREATE TABLE IF NOT EXISTS CHAT_ID
             chat_id integer
             );"""
 
-# ins_text = """INSERT INTO PARTICIPANT
-#             VALUES ('%d','%d','%s','%s','%s');
-#             """
-
-# del_text = """DELETE FROM PARTICIPANT WHERE chat_id = %d and participant_id = %d;
-#             """
-
-# del_election_text = """DELETE FROM ELECTION WHERE chat_id = %d and participant_id = %d;
-#             """
-
-# sel_all_text = """SELECT * FROM PARTICIPANT WHERE chat_id = %d ;
-#                 """
-
-# sel_text = """SELECT * FROM PARTICIPANT WHERE chat_id = %d and participant_id = %d;
-#             """
-
-# sel_election_text = """SELECT * FROM ELECTION WHERE chat_id = %d and participant_id = %d;
-#                     """
-
-# upd_election_text = """UPDATE ELECTION
-#                     set elec_time = %d
-#                     WHERE chat_id = %d and participant_id = %d;
-#                     """
-
-# reset_election_time_text = """UPDATE ELECTION set elec_time = %d"""
-
-# colect_election_hist_text = """INSERT INTO ELECTION_HIST
-#                             SELECT elc.*, cast('%s' as DATE) from ELECTION as elc
-#                             """
-
+ct_metadata_text = """CREATE TABLE IF NOT EXISTS METADATA
+            (
+            id_rk integer,
+            operation integer,
+            chat_id integer,
+            participant_id integer,
+            value integer,
+            operation_date_from text,
+            operation_date_to text,
+            is_success_flg integer
+            );"""
 
 ins_lj_participant_election_text = """INSERT INTO ELECTION
             SELECT part.chat_id, part.participant_id,
@@ -73,6 +54,11 @@ ins_lj_participant_election_text = """INSERT INTO ELECTION
             on (part.chat_id = elec.chat_id and
             part.participant_id = elec.participant_id)
             WHERE elec.participant_id is NULL;"""
+
+sel_all_penalty_time_text = """SELECT part.participant_username, elec.penalty_time, part.participant_id
+            FROM ELECTION AS elec JOIN PARTICIPANT as part
+            on (part.chat_id = ? and part.chat_id = elec.chat_id and
+            part.participant_id = elec.participant_id);"""
 
 # судя по документации библиотеки, использовать ? более секурно, чем %*
 ins_text = """INSERT INTO PARTICIPANT
@@ -88,11 +74,15 @@ sel_text = """SELECT * FROM PARTICIPANT WHERE chat_id = ? and participant_id = ?
 
 sel_election_text = """SELECT * FROM ELECTION WHERE chat_id = ? and participant_id = ?;"""
 
-upd_election_text = """UPDATE ELECTION
-                    set elec_time = ?
-                    WHERE chat_id = ? and participant_id = ?;"""
+upd_election_elec_text = """UPDATE ELECTION
+            SET elec_time = ?
+            WHERE chat_id = ? and participant_id = ?;"""
 
-reset_election_time_text = """UPDATE ELECTION set elec_time = ?;"""
+upd_election_penalty_text = """UPDATE ELECTION
+            SET penalty_time = ?
+            WHERE chat_id = ? and participant_id = ?;"""
+
+reset_election_time_text = """UPDATE ELECTION SET elec_time = ?;"""
 
 colect_election_hist_text = """INSERT INTO ELECTION_HIST
                             SELECT elc.*, cast(? as text) FROM ELECTION as elc;"""
@@ -105,6 +95,18 @@ ins_chatID_text = """INSERT INTO CHAT_ID
 del_chatID_text = """DELETE FROM CHAT_ID WHERE chat_id = ?;"""
 
 sel_all_chatID_text = """SELECT * FROM CHAT_ID;"""
+
+ins_operation_meta_text = """INSERT INTO METADATA
+            VALUES (?,?,?,?,?,?,?,?)"""
+
+sel_max_id_rk_meta_text = """SELECT max(id_rk) FROM METADATA"""
+
+sel_operation_meta_text = """SELECT * FROM METADATA
+            WHERE operation in (?) and is_success_flg = ?"""
+
+upd_operation_meta_text = """UPDATE METADATA
+            SET is_success_flg = ?
+            WHERE id_rk = ?"""
 
 
 # создать таблицу
@@ -120,6 +122,8 @@ def create_table():
     cursor.execute(ct_election_hist_text)
     # таблица чатов, подписавшихся на рассылку разных сообщений ботом
     cursor.execute(ct_chatID_text)
+    # таблица метаданных операций
+    cursor.execute(ct_metadata_text)
     db.commit()
 
 
@@ -143,6 +147,8 @@ def sql_exec(exec_text, params):
 # print(sql_exec("""DROP TABLE ELECTION_HIST""", []))
 # print(sql_exec(colect_election_hist_text, ['2018-09-06']))
 # print(sql_exec("""SELECT * FROM ELECTION_HIST""", []))
+
+# sql_exec("""DROP TABLE METADATA""", [])
 
 
 # вставить данные в таблицу participant and election
@@ -187,6 +193,8 @@ def insert_into_chatID(chat_id):
 
     cursor.execute(ins_chatID_text, [chat_id])
     db.commit()
+    # обновляем список чатов для использования ботом
+    cfg.subscribed_chats_transform(sql_exec(sel_all_chatID_text, []))
     return 1
 
 
@@ -197,6 +205,8 @@ def delete_from_chatID(chat_id):
     cursor = db.cursor()
     cursor.execute(del_chatID_text, [chat_id])
     db.commit()
+    # обновляем список чатов для использования ботом
+    cfg.subscribed_chats_transform(sql_exec(sel_all_chatID_text, []))
 
 
 # создать таблицы, если их нет
@@ -207,6 +217,12 @@ sql_exec(reset_election_time_text, [0])
 
 # обновляем список чатов, чьи сообщения бот может читать
 cfg.subscribed_chats_transform(sql_exec(sel_all_chatID_text, []))
+
+# вытаскиваем максимальный id метаданных
+max_id_rk = sql_exec(sel_max_id_rk_meta_text, [])
+if max_id_rk[0][0] is None:
+    max_id_rk = [(0,)]
+cfg.max_id_rk = max_id_rk[0][0] + 1
 
 # print(sql_exec(sel_all_text, (cfg.dds_chat_id)))
 
