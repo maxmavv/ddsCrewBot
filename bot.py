@@ -204,9 +204,16 @@ def penalty(message):
                              'Ну, или может быть этот этот человек ещё не подписался?')
     else:
         pen_msg = 'Штрафы на сегодня:\n'
+        pen_msg_flg = 0
         for user in pen:
-            pen_msg += str(user[0]) + ' — ' + str(user[1]) + ' мин\n'
-        bot.send_message(cid, pen_msg)
+            if int(user[1]) != 0:
+                pen_msg += str(user[0]) + ' — ' + str(user[1]) + ' мин\n'
+                pen_msg_flg = 1
+
+        if pen_msg_flg == 1:
+            bot.send_message(cid, pen_msg)
+        else:
+            bot.send_message(cid, random.choice(cfg.penalty_empty_text))
 
 
 # раскомментировать, чтобы узнать file_id стикера
@@ -267,9 +274,13 @@ def text_parser(message):
                 final_elec_time = datetime.timedelta(minutes=final_elec_time)
                 cfg.dinner_time += final_elec_time
 
+                additional_msg = ''
+                if penalty_time != 0:
+                    additional_msg = 'с учётом штрафов '
+
                 # голосование или переголосование
                 if int(user[0][2]) == 0:
-                    bot.reply_to(message, cfg.vote_msg + str(cfg.dinner_time)[:-3])
+                    bot.reply_to(message, cfg.vote_msg + additional_msg + str(cfg.dinner_time)[:-3])
                 else:
                     final_elec_time = 0
                     prev_din_elec = int(user[0][2])
@@ -287,7 +298,7 @@ def text_parser(message):
 
                     final_elec_time = datetime.timedelta(minutes=final_elec_time)
                     cfg.dinner_time -= final_elec_time
-                    bot.reply_to(message, cfg.revote_msg + str(cfg.dinner_time)[:-3])
+                    bot.reply_to(message, cfg.revote_msg + additional_msg + str(cfg.dinner_time)[:-3])
 
                 cfg.show_din_time = str(cfg.dinner_time)[:-3]
                 print('Время обеда', cfg.show_din_time)
