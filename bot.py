@@ -123,8 +123,8 @@ def ping_all(message):
 @cfg.loglog(command='coin', type='message')
 def throw_coin(message):
     cid = message.chat.id
-    bot.send_chat_action(cid, 'typing')
     bot.send_message(cid, random.choice(cfg.precomand_text))
+    bot.send_chat_action(cid, 'typing')
     time.sleep(1)
 
     bot.send_message(cid, random.choice(cfg.coin_var))
@@ -135,8 +135,8 @@ def throw_coin(message):
 @cfg.loglog(command='dice', type='message')
 def throw_dice(message):
     cid = message.chat.id
-    bot.send_chat_action(cid, 'typing')
     bot.send_message(cid, random.choice(cfg.precomand_text))
+    bot.send_chat_action(cid, 'typing')
     time.sleep(1)
 
     if len(message.text.split()) == 2 and message.text.split()[1].isdigit():
@@ -150,8 +150,8 @@ def throw_dice(message):
 @cfg.loglog(command='ball', type='message')
 def magic_ball(message):
     cid = message.chat.id
-    bot.send_chat_action(cid, 'typing')
     bot.send_message(cid, random.choice(cfg.precomand_ball))
+    bot.send_chat_action(cid, 'typing')
     time.sleep(1)
 
     bot.reply_to(message, random.choice(cfg.ball_var))
