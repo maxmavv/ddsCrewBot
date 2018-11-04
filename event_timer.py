@@ -44,28 +44,28 @@ def check_metadata(bot):
             # штрафы
             if m[1] == 0:
                 print(m)
-                if m[4] >= 0:
-                    # вычисляем дату исполнения
-                    hh = 72
-                    if time_now.weekday() in (3, 4):
-                        hh = 120
-                    elif time_now.weekday() == 5:
-                        hh = 96
-
-                    delta = datetime.timedelta(hours=hh, minutes=5)
-                    expire_date = time_now + delta
-
-                    db.sql_exec(db.ins_operation_meta_text,
-                                [cfg.max_id_rk, 0, m[2], m[3], - int(m[4]),
-                                 str(time_now)[:-7], str(expire_date)[:-7], 1])
-                    cfg.max_id_rk += 1
-
                 user = db.sql_exec(db.sel_election_text, [m[2], m[3]])
                 if len(user) == 0:
                     # обновляем строку в метаданных как ошибочную
                     db.sql_exec(db.upd_operation_meta_text, [2, m[0]])
                     print('!!! ОШИБКА, НЕТ ЮЗЕРА В БАЗЕ ДЛЯ ' + str(m[2]) + ' ' + str(m[3]) + ' !!!')
                 else:
+                    if m[4] >= 0:
+                        # вычисляем дату исполнения
+                        hh = 72
+                        if dttm.weekday() in (3, 4):
+                            hh = 120
+                        elif dttm.weekday() == 5:
+                            hh = 96
+
+                        delta = datetime.timedelta(hours=hh, minutes=5)
+                        expire_date = time_now + delta
+
+                        db.sql_exec(db.ins_operation_meta_text,
+                                    [cfg.max_id_rk, 0, m[2], m[3], - int(m[4]),
+                                     str(time_now)[:-7], str(expire_date)[:-7], 1])
+                        cfg.max_id_rk += 1
+
                     penalty = int(user[0][3]) + int(m[4])
 
                     if penalty < 0:
