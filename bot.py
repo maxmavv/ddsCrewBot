@@ -40,6 +40,7 @@ def send_welcome(message):
 @cfg.loglog(command='chto_v_mumu', type='message')
 def send_mumu(message):
     cid = message.chat.id
+    bot.send_chat_action(cid, 'typing')
     week_day = datetime.datetime.today().weekday()
     lunches = mumu.lunches(week_day)
 
@@ -54,6 +55,7 @@ def send_mumu(message):
 @cfg.loglog(command='subscribe', type='message')
 def subscribe(message):
     cid = message.chat.id
+    bot.send_chat_action(cid, 'typing')
     user = message.from_user
     res = db.insert_into_participants(cid, user)
     if res == -1:
@@ -67,6 +69,7 @@ def subscribe(message):
 @cfg.loglog(command='unsubscribe', type='message')
 def unsubscribe(message):
     cid = message.chat.id
+    bot.send_chat_action(cid, 'typing')
     user_id = message.from_user.id
     db.delete_from_participants(cid, user_id)
     bot.send_message(cid, cfg.unsubscribe_msg)
@@ -98,6 +101,7 @@ def admin_unsubscribe_for_dinner(message):
 @cfg.loglog(command='all', type='message')
 def ping_all(message):
     cid = message.chat.id
+    bot.send_chat_action(cid, 'typing')
     user_id = message.from_user.id
     users = db.sql_exec(db.sel_all_text, [cid])
     call_text = 'Эй, @all: '
@@ -119,6 +123,7 @@ def ping_all(message):
 @cfg.loglog(command='coin', type='message')
 def throw_coin(message):
     cid = message.chat.id
+    bot.send_chat_action(cid, 'typing')
     bot.send_message(cid, random.choice(cfg.precomand_text))
     time.sleep(1)
 
@@ -130,6 +135,7 @@ def throw_coin(message):
 @cfg.loglog(command='dice', type='message')
 def throw_dice(message):
     cid = message.chat.id
+    bot.send_chat_action(cid, 'typing')
     bot.send_message(cid, random.choice(cfg.precomand_text))
     time.sleep(1)
 
@@ -144,6 +150,7 @@ def throw_dice(message):
 @cfg.loglog(command='ball', type='message')
 def magic_ball(message):
     cid = message.chat.id
+    bot.send_chat_action(cid, 'typing')
     bot.send_message(cid, random.choice(cfg.precomand_ball))
     time.sleep(1)
 
@@ -164,6 +171,7 @@ def show_dinner_time(message):
 def penalty(message):
     time_now = datetime.datetime.now()
     cid = message.chat.id
+    bot.send_chat_action(cid, 'typing')
     pen = db.sql_exec(db.sel_all_penalty_time_text, [cid])
 
     cmd = message.text.split()
@@ -249,6 +257,7 @@ def text_parser(message):
         # ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!!!
         # if din_elec is not False:
         if week_day not in (5, 6) and hour_msg < 12 and din_elec is not False:
+            bot.send_chat_action(cid, 'typing')
             print('##########', datetime.datetime.now(), 'dinner_election')
 
             print('Din_elec =', din_elec)
