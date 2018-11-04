@@ -223,7 +223,7 @@ cfg.subscribed_chats_transform(sql_exec(sel_all_chatID_text, []))
 max_id_rk = sql_exec(sel_max_id_rk_meta_text, [])
 if max_id_rk[0][0] is None:
     max_id_rk = [(0,)]
-cfg.max_id_rk = max_id_rk[0][0] + 1
+cfg.max_id_rk = int(max_id_rk[0][0]) + 1
 
 # print(sql_exec(sel_all_text, (cfg.dds_chat_id)))
 

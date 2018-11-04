@@ -226,6 +226,27 @@ def show_dinner_time(message):
     bot.send_message(cid, random.choice(cfg.dinner_text) + cfg.show_din_time)
 
 
+# сделать SQL запрос
+@bot.message_handler(commands=['sql'])
+@cfg.loglog(command='sql', type='message')
+def sqlsql(message):
+    cid = message.chat.id
+    bot.send_chat_action(cid, 'typing')
+
+    sqlQuery = message.text[5:]
+    print(sqlQuery)
+
+    if sqlQuery.find(';') != -1:
+        bot.send_message(cid, 'Запрос надо писать без ";"!')
+    else:
+        if sqlQuery.upper().startswith('SELECT'):
+            res = db.sql_exec(sqlQuery, [])
+            print(str(res))
+            bot.send_message(cid, str(res))
+        else:
+            bot.send_message(cid, 'Я выполняю только SELECT запросы!')
+
+
 # показать/оставить штрафы
 @bot.message_handler(commands=['penalty'])
 @cfg.loglog(command='penalty', type='message')
