@@ -130,11 +130,21 @@ def create_table():
 # выполнить sql запрос
 @cfg.loglog(command='sql_exec', type='db_exec')
 def sql_exec(exec_text, params):
-    db = sql.connect(cfg.db_name)
-    cursor = db.cursor()
-    cursor.execute(exec_text, params)
-    db.commit()
-    return cursor.fetchall()
+    try:
+        db = sql.connect(cfg.db_name)
+        cursor = db.cursor()
+        cursor.execute(exec_text, params)
+        db.commit()
+        return cursor.fetchall()
+    except Exception:
+        return 'ERROR!'
+# @cfg.loglog(command='sql_exec', type='db_exec')
+# def sql_exec(exec_text, params):
+#     db = sql.connect(cfg.db_name)
+#     cursor = db.cursor()
+#     cursor.execute(exec_text, params)
+#     db.commit()
+#     return cursor.fetchall()
 
 
 # очистка таблицы голосования, ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!!!

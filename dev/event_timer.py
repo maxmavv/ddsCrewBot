@@ -78,7 +78,7 @@ def check_metadata(bot):
                                      str(time_now)[:-7], str(expire_date)[:-7], 1])
                         cfg.max_id_rk += 1
 
-                        penalty = int(user[0][3]) + int(m[4])
+                    penalty = int(user[0][3]) + int(m[4])
 
                     if penalty < 0:
                         penalty = 0

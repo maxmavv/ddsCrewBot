@@ -137,7 +137,7 @@ def sql_exec(exec_text, params):
         db.commit()
         return cursor.fetchall()
     except Exception:
-        return 'Ошибка в SQL запросе!'
+        return 'ERROR!'
 
 
 # очистка таблицы голосования, ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!!!

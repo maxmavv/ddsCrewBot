@@ -83,8 +83,8 @@ def check_metadata(bot):
                     # обновляем строку в метаданных как успешно отработавшую
                     db.sql_exec(db.upd_operation_meta_text, [0, m[0]])
 
-                print(db.sql_exec("""SELECT * FROM METADATA""", []))
-                print(db.sql_exec("""SELECT * FROM ELECTION""", []))
+                # print(db.sql_exec("""SELECT * FROM METADATA""", []))
+                # print(db.sql_exec("""SELECT * FROM ELECTION""", []))
             # воронков
             elif m[1] == 1:
                 dttmt = dttm.time()
@@ -151,7 +151,7 @@ def voronkov_timer(bot, meta):
 
     # обновляем строку в метаданных как успешно отработавшую
     db.sql_exec(db.upd_operation_meta_text, [0, meta[0]])
-    print(db.sql_exec("""SELECT * FROM METADATA""", []))
+    # print(db.sql_exec("""SELECT * FROM METADATA""", []))
 
 
 @cfg.loglog(command='one_hour_timer', type='bot')
