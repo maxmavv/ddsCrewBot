@@ -52,11 +52,16 @@ def check_metadata(bot):
                 else:
                     if m[4] >= 0:
                         # вычисляем дату исполнения
-                        hh = 72
-                        if dttm.weekday() in (3, 4):
-                            hh = 120
-                        elif dttm.weekday() == 5:
+                        # hh = 72
+                        # if dttm.weekday() in (3, 4):
+                        #     hh = 120
+                        # elif dttm.weekday() == 5:
+                        #     hh = 96
+                        hh = 48
+                        if dttm.weekday() in (4, 5):
                             hh = 96
+                        if dttm.weekday() == 6:
+                            hh = 72
 
                         delta = datetime.timedelta(hours=hh, minutes=5)
                         expire_date = time_now + delta
