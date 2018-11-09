@@ -130,11 +130,14 @@ def create_table():
 # выполнить sql запрос
 @cfg.loglog(command='sql_exec', type='db_exec')
 def sql_exec(exec_text, params):
-    db = sql.connect(cfg.db_name)
-    cursor = db.cursor()
-    cursor.execute(exec_text, params)
-    db.commit()
-    return cursor.fetchall()
+    try:
+        db = sql.connect(cfg.db_name)
+        cursor = db.cursor()
+        cursor.execute(exec_text, params)
+        db.commit()
+        return cursor.fetchall()
+    except Exception:
+        return 'Ошибка в SQL запросе!'
 
 
 # очистка таблицы голосования, ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!!!
@@ -223,7 +226,7 @@ cfg.subscribed_chats_transform(sql_exec(sel_all_chatID_text, []))
 max_id_rk = sql_exec(sel_max_id_rk_meta_text, [])
 if max_id_rk[0][0] is None:
     max_id_rk = [(0,)]
-cfg.max_id_rk = max_id_rk[0][0] + 1
+cfg.max_id_rk = int(max_id_rk[0][0]) + 1
 
 # print(sql_exec(sel_all_text, (cfg.dds_chat_id)))
 
