@@ -21,8 +21,8 @@ hello_msg = '''Привет! Я бот для чата DDS. Если тебе э
 /penalty @Username N - поставить штраф
 /subscribe - подписаться на рассылку @all
 /unsubscribe - отписаться от рассылки @all
-/admin_subscribe_for_messages - подписать чат на чтение сообщений
-/admin_unsubscribe_for_messages - отписать чат от чтения сообщений
+/admin_subscribe_for_messages - подписать чат на чтение сообщений ботом и рассылки уведомлений
+/admin_unsubscribe_for_messages - отписать чат от чтения сообщений ботом и рассылки уведомлений
 '''
 
 # название базы данных пользователей в чатах
