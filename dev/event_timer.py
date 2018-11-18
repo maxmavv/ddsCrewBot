@@ -212,11 +212,41 @@ def one_hour_timer(bot):
             if str(time_now.time().hour) == '12':
                 chatUsers = call_all()
                 for cid, msg in chatUsers.items():
+                    if time_now.weekday() == 0:
+                        cfg.dinner_time = cfg.dinner_default_time
+                        cfg.dinner_time = datetime.timedelta(hours=cfg.dinner_time[0],
+                                                             minutes=cfg.dinner_time[1])
+                        cfg.show_din_time = str(cfg.dinner_time)[:-3]
+
+                        elec = db.sql_exec(db.sel_election_penalty_B_text, [])
+
+                        final_elec_time = 0
+                        for part in elec:
+                            elec_time = int(part[2])
+                            pen_time = int(part[3])
+
+                            sign = elec_time / abs(elec_time)
+                            tmp_time = elec_time - sign * pen_time
+
+                            if abs(tmp_time) > 25:
+                                tmp_time = sign * 25
+
+                            if sign * tmp_time < 0:
+                                tmp_time = 0
+
+                            final_elec_time += tmp_time
+
+                        final_elec_time = datetime.timedelta(minutes=final_elec_time)
+                        cfg.dinner_time += final_elec_time
+                        cfg.show_din_time = str(cfg.dinner_time)[:-3]
+
                     send_msg(bot, msg + random.choice(cfg.dinner_text) + cfg.show_din_time, cid)
                     # сохраняем историю голосования
                     db.sql_exec(db.colect_election_hist_text, [str(time_now.date())])
                     # обнуляем время голосования
                     db.sql_exec(db.reset_election_time_text, [0])
+                    # обнуляем время штрафЬ
+                    db.sql_exec(db.reset_penalty_B_time_text, [0])
 
             # # намёк покушать
             # if str(time_now.time().hour) == '17':

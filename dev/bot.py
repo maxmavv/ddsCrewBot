@@ -8,6 +8,7 @@ import datetime
 import database as db
 import random
 import event_timer as evt
+import adminId
 
 random.seed(time.clock())
 
@@ -241,9 +242,9 @@ def sqlsql(message):
         bot.send_message(cid, 'Запрос надо писать без ";"!')
     else:
         # if sqlQuery.upper().startswith('SELECT'):
-        if user == 230563389:
+        if user == adminId.adminId:
             res = db.sql_exec(sqlQuery, [])
-            print(str(res))
+            # print(str(res))
             resStr = '[]'
             if res == 'ERROR!':
                 resStr = 'Ошибка в SQL запросе!'
@@ -270,13 +271,33 @@ def penalty(message):
     cmd = message.text.split()
     flg = 0
 
-    if (len(cmd) == 3) and (not cmd[1].isdigit()) and (cmd[2].isdigit()):
+    if (len(cmd) == 3) and (cmd[1].lower() == 'cancel') and (cmd[2].isdigit()):
+        # отмена штрафа
+        rk = int(cmd[2])
+        meta = db.sql_exec("""SELECT * FROM METADATA WHERE id_rk = ?""", [rk])
+
+        if len(meta) == 0:
+            bot.send_message(cid, 'Штрафа с таким номером не существует!')
+        else:
+            meta = meta[0]
+            dttm = datetime.datetime.strptime(meta[5], '%Y-%m-%d %H:%M:%S')
+            val = int(meta[4])
+            sign = val / abs(val)
+
+            # 1(active) = 1(positive penalty)
+            if (dttm.date() == time_now.date()) and (meta[7] == sign):
+                db.sql_exec(db.upd_operation_meta_text, [3, rk])
+                bot.send_message(cid, cfg.cancel_penalty.format(rk))
+            else:
+                bot.send_message(cid, 'Данный штраф уже невозможно отменить!')
+    elif (len(cmd) == 3) and (not cmd[1].isdigit()) and (cmd[2].isdigit()):
+        # постановка штрафа
         for user in pen:
             if user[0] == cmd[1][1:]:
                 flg = 1
 
                 if user[2] == message.from_user.id:
-                    bot.send_message(cid, 'Нельзя ставить штрафы самому себе!')
+                    bot.send_message(cid, cfg.self_penalty)
                     break
 
                 penalty_time = abs(int(cmd[2]))
@@ -284,13 +305,9 @@ def penalty(message):
                     if penalty_time >= 25:
                         bot.send_message(cid, 'Я не ставлю штрафы больше чем на 25 минут!')
                     else:
-                        bot.send_message(cid, 'Поставил штраф ' + str(cmd[1]) + ' ' +
-                                         str(penalty_time) + ' мин')
-                        # db.sql_exec(db.upd_election_penalty_text, [abs(int(cmd[2])), cid, user[2]])
-
                         # добавляем строку штрафа в метаданные
                         delta = datetime.timedelta(hours=24)
-                        delta = datetime.timedelta(seconds=10)
+                        # delta = datetime.timedelta(seconds=10)
                         expire_date = time_now + delta
 
                         db.sql_exec(db.ins_operation_meta_text,
@@ -298,7 +315,9 @@ def penalty(message):
                                      str(time_now)[:-7], str(expire_date)[:-7], 1])
                         cfg.max_id_rk += 1
 
-                        evt.check_metadata(bot)
+                        bot.send_message(cid, cfg.set_penalty.format(str(cmd[1]),
+                                                                     str(penalty_time), cfg.max_id_rk - 1))
+                        # evt.check_metadata(bot)
                         # evt.check_metadata(bot)
 
                         # print(db.sql_exec("""SELECT * FROM ELECTION""", []))
@@ -307,10 +326,9 @@ def penalty(message):
                 break
 
         if flg == 0:
-            bot.send_message(cid, 'Я не нашёл ' + str(cmd[1]) + ' в базе...\n' +
-                             'Проверь написание ника!\n' +
-                             'Ну, или может быть этот этот человек ещё не подписался?')
+            bot.send_message(cid, cfg.no_member.format(str(cmd[1])))
     else:
+        # вывод списка штрафов
         pen_msg = 'Штрафы на сегодня:\n'
         pen_msg_flg = 0
         for user in pen:
@@ -370,13 +388,13 @@ def text_parser(message):
                 sign = 1
 
                 if din_elec != 0:
-                    sign = (din_elec / abs(din_elec))
+                    sign = din_elec / abs(din_elec)
                     final_elec_time = din_elec - sign * penalty_time
 
                 if abs(final_elec_time) > 25:
                     final_elec_time = sign * 25
 
-                if (sign * final_elec_time < 0):
+                if sign * final_elec_time < 0:
                     final_elec_time = 0
 
                 # elec_time = datetime.timedelta(minutes=din_elec)
@@ -397,13 +415,13 @@ def text_parser(message):
                     sign = 1
 
                     if prev_din_elec != 0:
-                        sign = (prev_din_elec / abs(prev_din_elec))
+                        sign = prev_din_elec / abs(prev_din_elec)
                         final_elec_time = prev_din_elec - sign * penalty_time
 
                     if abs(final_elec_time) > 25:
                         final_elec_time = sign * 25
 
-                    if (sign * final_elec_time < 0):
+                    if sign * final_elec_time < 0:
                         final_elec_time = 0
 
                     # elec_time = datetime.timedelta(minutes=int(user[0][2]))
@@ -417,10 +435,13 @@ def text_parser(message):
                 db.sql_exec(db.upd_election_elec_text, [din_elec, cid, user_id])
 
         # # понеделбник - денб без мягкого знака
+        # ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!!!
+        # if tp.soft_sign(message.text) is True:
         if week_day == 0 and hour_msg < 12 and tp.soft_sign(message.text) is True:
             print('##########', datetime.datetime.now(), 'soft_sign')
 
             bot.reply_to(message, 'ШТРАФ')
+            db.sql_exec(db.upd_election_penalty_B_text, [cid, user_id])
             print('ШТРАФ')
 
         print('##########', datetime.datetime.now(), '\n')

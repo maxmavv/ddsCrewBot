@@ -182,7 +182,7 @@ def sqlsql(message):
         # if sqlQuery.upper().startswith('SELECT'):
         if user == 230563389:
             res = db.sql_exec(sqlQuery, [])
-            print(str(res))
+            # print(str(res))
             resStr = '[]'
             if res == 'ERROR!':
                 resStr = 'Ошибка в SQL запросе!'

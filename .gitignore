@@ -1,6 +1,7 @@
 tokenBot.py
 bot_database.db
 serverInfo.py
+adminId.py
 __pycache__/*
 *.pem
 log*
