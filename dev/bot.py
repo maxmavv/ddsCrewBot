@@ -138,9 +138,9 @@ def unsubscribe(message):
 
 
 # регистрируем чат в рассылки на сообщения ботом
-@bot.message_handler(commands=['admin_subscribe_for_messages'])
-@cfg.loglog(command='admin_subscribe_for_messages', type='message')
-def admin_subscribe_for_dinner(message):
+@bot.message_handler(commands=['admin_subscribe_chat'])
+@cfg.loglog(command='admin_subscribe_chat', type='message')
+def admin_subscribe_chat(message):
     cid = message.chat.id
     res = db.insert_into_chatID(cid)
     if res == -1:
@@ -150,9 +150,9 @@ def admin_subscribe_for_dinner(message):
 
 
 # удаляем чат из рассылки на сообщения ботом
-@bot.message_handler(commands=['admin_unsubscribe_for_messages'])
-@cfg.loglog(command='admin_unsubscribe_for_messages', type='message')
-def admin_unsubscribe_for_dinner(message):
+@bot.message_handler(commands=['admin_unsubscribe_chat'])
+@cfg.loglog(command='admin_unsubscribe_chat', type='message')
+def admin_unsubscribe_chat(message):
     cid = message.chat.id
     db.delete_from_chatID(cid)
     bot.send_message(cid, cfg.unsubscribe_msg_chatId)

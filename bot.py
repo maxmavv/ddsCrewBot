@@ -9,6 +9,7 @@ import database as db
 import random
 import event_timer as evt
 import webhook
+import adminId
 
 random.seed(time.clock())
 
@@ -76,9 +77,9 @@ def unsubscribe(message):
 
 
 # регистрируем чат в рассылки на сообщения ботом
-@bot.message_handler(commands=['admin_subscribe_for_messages'])
-@cfg.loglog(command='admin_subscribe_for_messages', type='message')
-def admin_subscribe_for_dinner(message):
+@bot.message_handler(commands=['admin_subscribe_chat'])
+@cfg.loglog(command='admin_subscribe_chat', type='message')
+def admin_subscribe_chat(message):
     cid = message.chat.id
     res = db.insert_into_chatID(cid)
     if res == -1:
@@ -88,9 +89,9 @@ def admin_subscribe_for_dinner(message):
 
 
 # удаляем чат из рассылки на сообщения ботом
-@bot.message_handler(commands=['admin_unsubscribe_for_messages'])
-@cfg.loglog(command='admin_unsubscribe_for_messages', type='message')
-def admin_unsubscribe_for_dinner(message):
+@bot.message_handler(commands=['admin_unsubscribe_chat'])
+@cfg.loglog(command='admin_unsubscribe_chat', type='message')
+def admin_unsubscribe_chat(message):
     cid = message.chat.id
     db.delete_from_chatID(cid)
     bot.send_message(cid, cfg.unsubscribe_msg_chatId)
@@ -179,10 +180,8 @@ def sqlsql(message):
     if sqlQuery.find(';') != -1:
         bot.send_message(cid, 'Запрос надо писать без ";"!')
     else:
-        # if sqlQuery.upper().startswith('SELECT'):
-        if user == 230563389:
+        if user == adminId.adminId:
             res = db.sql_exec(sqlQuery, [])
-            # print(str(res))
             resStr = '[]'
             if res == 'ERROR!':
                 resStr = 'Ошибка в SQL запросе!'
@@ -192,7 +191,6 @@ def sqlsql(message):
             bot.send_message(cid, str(resStr))
         else:
             bot.send_message(cid, 'Извините, онолитики, я выполняю выполняю только запросы разработчика!')
-            # bot.send_message(cid, 'Я выполняю только SELECT запросы!')
 
 
 # показать/оставить штрафы
@@ -207,13 +205,33 @@ def penalty(message):
     cmd = message.text.split()
     flg = 0
 
-    if (len(cmd) == 3) and (not cmd[1].isdigit()) and (cmd[2].isdigit()):
+    if (len(cmd) == 3) and (cmd[1].lower() == 'cancel') and (cmd[2].isdigit()):
+        # отмена штрафа
+        rk = int(cmd[2])
+        meta = db.sql_exec("""SELECT * FROM METADATA WHERE id_rk = ?""", [rk])
+
+        if len(meta) == 0:
+            bot.send_message(cid, 'Штрафа с таким номером не существует!')
+        else:
+            meta = meta[0]
+            dttm = datetime.datetime.strptime(meta[5], '%Y-%m-%d %H:%M:%S')
+            val = int(meta[4])
+            sign = val / abs(val)
+
+            # 1(active) = 1(positive penalty)
+            if (dttm.date() == time_now.date()) and (meta[7] == sign):
+                db.sql_exec(db.upd_operation_meta_text, [3, rk])
+                bot.send_message(cid, cfg.cancel_penalty.format(rk))
+            else:
+                bot.send_message(cid, 'Данный штраф уже невозможно отменить!')
+    elif (len(cmd) == 3) and (not cmd[1].isdigit()) and (cmd[2].isdigit()):
+        # постановка штрафа
         for user in pen:
             if user[0] == cmd[1][1:]:
                 flg = 1
 
                 if user[2] == message.from_user.id:
-                    bot.send_message(cid, 'Нельзя ставить штрафы самому себе!')
+                    bot.send_message(cid, cfg.self_penalty)
                     break
 
                 penalty_time = abs(int(cmd[2]))
@@ -221,9 +239,6 @@ def penalty(message):
                     if penalty_time >= 25:
                         bot.send_message(cid, 'Я не ставлю штрафы больше чем на 25 минут!')
                     else:
-                        bot.send_message(cid, 'Поставил штраф ' + str(cmd[1]) + ' ' +
-                                         str(penalty_time) + ' мин')
-
                         # добавляем строку штрафа в метаданные
                         delta = datetime.timedelta(hours=24)
                         expire_date = time_now + delta
@@ -232,15 +247,17 @@ def penalty(message):
                                     [cfg.max_id_rk, 0, cid, user[2], penalty_time,
                                      str(time_now)[:-7], str(expire_date)[:-7], 1])
                         cfg.max_id_rk += 1
+
+                        bot.send_message(cid, cfg.set_penalty.format(str(cmd[1]),
+                                                                     str(penalty_time), cfg.max_id_rk - 1))
                 else:
                     bot.send_message(cid, 'Я не ставлю штрафы 0 минут!')
                 break
 
         if flg == 0:
-            bot.send_message(cid, 'Я не нашёл ' + str(cmd[1]) + ' в базе...\n' +
-                             'Проверь написание ника!\n' +
-                             'Ну, или может быть этот этот человек ещё не подписался?')
+            bot.send_message(cid, cfg.no_member.format(str(cmd[1])))
     else:
+        # вывод списка штрафов
         pen_msg = 'Штрафы на сегодня:\n'
         pen_msg_flg = 0
         for user in pen:
@@ -268,8 +285,6 @@ def text_parser(message):
     week_day = datetime.datetime.today().weekday()
     # нужно брать дату из даты сообщения
     hour_msg = time.localtime(message.date).tm_hour
-    # текущее время, может пригодиться
-    # hour_now = time.localtime().tm_hour
     cid = message.chat.id
     user_id = message.from_user.id
 
@@ -284,8 +299,6 @@ def text_parser(message):
 
         # # голосование за обед
         din_elec = tp.dinner_election(message.text)
-        # ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!!!
-        # if din_elec is not False:
         if week_day not in (5, 6) and hour_msg < 12 and din_elec is not False:
             bot.send_chat_action(cid, 'typing')
             print('##########', datetime.datetime.now(), 'dinner_election')
@@ -301,13 +314,13 @@ def text_parser(message):
                 sign = 1
 
                 if din_elec != 0:
-                    sign = (din_elec / abs(din_elec))
+                    sign = din_elec / abs(din_elec)
                     final_elec_time = din_elec - sign * penalty_time
 
                 if abs(final_elec_time) > 25:
                     final_elec_time = sign * 25
 
-                if (sign * final_elec_time < 0):
+                if sign * final_elec_time < 0:
                     final_elec_time = 0
 
                 final_elec_time = datetime.timedelta(minutes=final_elec_time)
@@ -326,13 +339,13 @@ def text_parser(message):
                     sign = 1
 
                     if prev_din_elec != 0:
-                        sign = (prev_din_elec / abs(prev_din_elec))
+                        sign = prev_din_elec / abs(prev_din_elec)
                         final_elec_time = prev_din_elec - sign * penalty_time
 
                     if abs(final_elec_time) > 25:
                         final_elec_time = sign * 25
 
-                    if (sign * final_elec_time < 0):
+                    if sign * final_elec_time < 0:
                         final_elec_time = 0
 
                     final_elec_time = datetime.timedelta(minutes=final_elec_time)
