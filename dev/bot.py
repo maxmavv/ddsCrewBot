@@ -286,8 +286,11 @@ def penalty(message):
 
             # 1(active) = 1(positive penalty)
             if (dttm.date() == time_now.date()) and (meta[7] == sign):
-                db.sql_exec(db.upd_operation_meta_text, [3, rk])
-                bot.send_message(cid, cfg.cancel_penalty.format(rk))
+                if meta[3] == message.from_user.id:
+                    bot.send_message(cid, cfg.self_penalty.format('отменять'))
+                else:
+                    db.sql_exec(db.upd_operation_meta_text, [3, rk])
+                    bot.send_message(cid, cfg.cancel_penalty.format(rk))
             else:
                 bot.send_message(cid, 'Данный штраф уже невозможно отменить!')
     elif (len(cmd) == 3) and (not cmd[1].isdigit()) and (cmd[2].isdigit()):
@@ -297,7 +300,7 @@ def penalty(message):
                 flg = 1
 
                 if user[2] == message.from_user.id:
-                    bot.send_message(cid, cfg.self_penalty)
+                    bot.send_message(cid, cfg.self_penalty.format('ставить'))
                     break
 
                 penalty_time = abs(int(cmd[2]))
