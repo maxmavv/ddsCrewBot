@@ -305,7 +305,7 @@ def penalty(message):
 
                 penalty_time = abs(int(cmd[2]))
                 if penalty_time != 0:
-                    if penalty_time >= 25:
+                    if penalty_time > 25:
                         bot.send_message(cid, 'Я не ставлю штрафы больше чем на 25 минут!')
                     else:
                         # добавляем строку штрафа в метаданные
@@ -343,6 +343,69 @@ def penalty(message):
             bot.send_message(cid, pen_msg)
         else:
             bot.send_message(cid, random.choice(cfg.penalty_empty_text))
+
+
+# добавить мем
+@bot.message_handler(commands=['meme_add'])
+@cfg.loglog(command='meme_add', type='message')
+def meme_add(message):
+    cid = message.chat.id
+    user = message.from_user.id
+    bot.send_chat_action(cid, 'typing')
+
+    meme_query = message.text.lower().split()
+    mem = db.sql_exec(db.sel_meme_text, [cid, meme_query[-1]])
+    print(mem)
+    print(message)
+
+    # comand
+    # if len(meme_query) == 3:
+    #     if len(mem) == 0:
+    #         db.sql_exec(db.ins_meme_text, [cid, meme_query[-1], type, value])
+
+
+# удалить мем
+# @bot.message_handler(commands=['meme_del'])
+# @cfg.loglog(command='meme_del', type='message')
+# def meme_del(message):
+#     cid = message.chat.id
+#     bot.send_chat_action(cid, 'typing')
+
+#     meme_query = message.text.lower().split()
+
+#     if len(meme_query) != 2:
+#         bot.send_message(cid, 'Для удаления мне нужно только название!')
+#     else:
+#         db.sql_exec(db.del_meme_text, [cid, meme_query[-1]])
+#         bot.send_message(cid, 'Если такой мем и был, то он удалён!')
+
+
+# мемы
+@bot.message_handler(commands=['meme'])
+@cfg.loglog(command='meme', type='message')
+def meme(message):
+    cid = message.chat.id
+    bot.send_chat_action(cid, 'typing')
+
+    meme_query = message.text.lower().split()
+
+    if len(meme_query) != 2:
+        bot.send_message(cid, 'Мне нужно только название мема!')
+    else:
+        mem = db.sql_exec(db.sel_meme_text, [cid, meme_query[-1]])
+        if len(mem) == 0:
+            bot.send_message(cid, 'Мема с таким названием не существует!')
+        else:
+            bot.send_message(cid, mem[3])
+
+
+# раскомментировать, чтобы узнать file_id фотографии
+@bot.message_handler(content_types=["photo"])
+def get_photo(message):
+    # print(message)
+    # print(str(message.json['photo']))
+    print(message.json['photo'][2]['file_id'])
+    cid = message.chat.id
 
 
 # раскомментировать, чтобы узнать file_id стикера
