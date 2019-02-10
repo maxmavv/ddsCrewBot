@@ -47,6 +47,15 @@ ct_metadata_text = """CREATE TABLE IF NOT EXISTS METADATA
             is_success_flg integer
             );"""
 
+ct_meme_text = """CREATE TABLE IF NOT EXISTS MEME
+            (
+            chat_id integer,
+            name text,
+            type text,
+            value text
+            );"""
+
+
 ins_lj_participant_election_text = """INSERT INTO ELECTION
             SELECT part.chat_id, part.participant_id,
             cast(0 as integer) as elec_time, cast(0 as integer) as penalty_time,
@@ -124,6 +133,13 @@ upd_operation_meta_text = """UPDATE METADATA
             SET is_success_flg = ?
             WHERE id_rk = ?"""
 
+sel_meme_text = """SELECT * FROM MEME WHERE chat_id = ? AND name = ?;"""
+
+ins_meme_text = """INSERT INTO MEME
+            VALUES (?,?,?,?);"""
+
+del_meme_text = """DELETE FROM MEME WHERE chat_id = ? AND name = ?;"""
+
 
 # создать таблицу
 @cfg.loglog(command='create_table', type='ct')
@@ -140,6 +156,8 @@ def create_table():
     cursor.execute(ct_chatID_text)
     # таблица метаданных операций
     cursor.execute(ct_metadata_text)
+    # таблица мемов
+    cursor.execute(ct_meme_text)
     db.commit()
 
 

@@ -163,7 +163,8 @@ def magic_ball(message):
 @cfg.loglog(command='dinner', type='message')
 def show_dinner_time(message):
     cid = message.chat.id
-    bot.send_message(cid, random.choice(cfg.dinner_text) + cfg.show_din_time)
+    bot.send_message(cid, random.choice(cfg.dinner_text) + '*' + cfg.show_din_time + '*',
+                     parse_mode='Markdown')
 
 
 # сделать SQL запрос
@@ -239,7 +240,7 @@ def penalty(message):
 
                 penalty_time = abs(int(cmd[2]))
                 if penalty_time != 0:
-                    if penalty_time >= 25:
+                    if penalty_time > 25:
                         bot.send_message(cid, 'Я не ставлю штрафы больше чем на 25 минут!')
                     else:
                         # добавляем строку штрафа в метаданные
@@ -265,13 +266,96 @@ def penalty(message):
         pen_msg_flg = 0
         for user in pen:
             if int(user[1]) != 0:
-                pen_msg += str(user[0]) + ' — ' + str(user[1]) + ' мин\n'
+                pen_msg += str(user[0]) + ' — *' + str(user[1]) + '* мин\n'
                 pen_msg_flg = 1
 
         if pen_msg_flg == 1:
-            bot.send_message(cid, pen_msg)
+            bot.send_message(cid, pen_msg, parse_mode='Markdown')
         else:
             bot.send_message(cid, random.choice(cfg.penalty_empty_text))
+
+
+# добавить мем
+@bot.message_handler(commands=['meme_add'])
+@cfg.loglog(command='meme_add', type='message')
+def meme_add(message):
+    cid = message.chat.id
+    # user = message.from_user.id
+    bot.send_chat_action(cid, 'typing')
+
+    meme_query = message.text.lower().strip().split()
+    mem = db.sql_exec(db.sel_meme_text, [cid, meme_query[-1]])
+
+    if len(mem) != 0:
+        bot.send_message(cid, 'Мем "{}" в вашем чате уже существует!'.format(meme_query[-1]))
+        return
+
+    # /meme_add /https.... meme_name
+    if len(meme_query) == 3:
+        res = db.sql_exec(db.ins_meme_text, [cid, meme_query[-1].strip(), 'lnk', meme_query[1].strip()])
+        if res != 'ERROR!':
+            bot.send_message(cid, 'Добавил мем "{}" в ваш чат!\nВы можете показать мем с помощью команды' +
+                             '\n/meme {}'.format(meme_query[-1], meme_query[-1]))
+        else:
+            bot.send_message(cid, 'Какая-то ошибка при добовлении мема... Пусть розробочик посмотит в логи!')
+    else:
+        bot.send_message(cid, 'Какая-то ошибка при добовлении мема.\nНужно указать только ссылку и название.')
+
+
+# удалить мем
+@bot.message_handler(commands=['meme_del'])
+@cfg.loglog(command='meme_del', type='message')
+def meme_del(message):
+    cid = message.chat.id
+    bot.send_chat_action(cid, 'typing')
+
+    meme_query = message.text.lower().strip().split()
+
+    if len(meme_query) != 2:
+        bot.send_message(cid, 'Для удаления мне нужно только название!')
+    else:
+        res = db.sql_exec(db.del_meme_text, [cid, meme_query[-1]])
+        if res != 'ERROR!':
+            bot.send_message(cid, 'Если такой мем и был в вашем чате, то он удалён!')
+        else:
+            bot.send_message(cid, 'Какая-то ошибка при добовлении мема... Пусть розробочик посмотит в логи!')
+
+
+# мемы
+@bot.message_handler(commands=['meme'])
+@cfg.loglog(command='meme', type='message')
+def meme(message):
+    cid = message.chat.id
+    bot.send_chat_action(cid, 'typing')
+
+    meme_query = message.text.lower().strip().split()
+
+    if len(meme_query) == 1:
+        res = db.sql_exec("""SELECT name FROM MEME WHERE chat_id = ?""", [cid])
+        if len(res) == 0:
+            bot.send_message(cid, 'В вашем чате нет мемов=(\nВы можете добавить их командой /meme_add!')
+        else:
+            resStr = 'Мемы, добавленные в ваш чат:\n'
+            for i in res:
+                resStr += '*' + str(i[0]) + '*\n'
+            bot.send_message(cid, str(resStr), parse_mode='Markdown')
+    elif len(meme_query) != 2:
+        bot.send_message(cid, 'Мне нужно только название мема!')
+    else:
+        mem = db.sql_exec(db.sel_meme_text, [cid, meme_query[-1]])
+        if len(mem) == 0:
+            bot.send_message(cid, 'Мем "{}" не существует в вашем чате!'.format(meme_query[-1]))
+        else:
+            bot.send_message(cid, mem[0][3])
+
+
+# раскомментировать, чтобы узнать file_id фотографии
+# @bot.message_handler(content_types=["photo"])
+# def get_photo(message):
+#     # print(message)
+#     # print(str(message.json['photo']))
+#     print(message.json['photo'][2]['file_id'])
+#     cid = message.chat.id
 
 
 # раскомментировать, чтобы узнать file_id стикера
@@ -360,12 +444,12 @@ def text_parser(message):
                 db.sql_exec(db.upd_election_elec_text, [din_elec, cid, user_id])
 
         # # понеделбник - денб без мягкого знака
-        if week_day == 0 and hour_msg < 12 and tp.soft_sign(message.text) is True:
-            print('##########', datetime.datetime.now(), 'soft_sign')
+        # if week_day == 0 and hour_msg < 12 and tp.soft_sign(message.text) is True:
+        #     print('##########', datetime.datetime.now(), 'soft_sign')
 
-            bot.reply_to(message, 'ШТРАФ')
-            db.sql_exec(db.upd_election_penalty_B_text, [cid, user_id])
-            print('ШТРАФ')
+        #     bot.reply_to(message, 'ШТРАФ')
+        #     db.sql_exec(db.upd_election_penalty_B_text, [cid, user_id])
+        #     print('ШТРАФ')
 
         print('##########', datetime.datetime.now(), '\n')
 
