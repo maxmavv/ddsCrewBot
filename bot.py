@@ -283,11 +283,11 @@ def meme_add(message):
     # user = message.from_user.id
     bot.send_chat_action(cid, 'typing')
 
-    meme_query = message.text.lower().strip().split()
-    mem = db.sql_exec(db.sel_meme_text, [cid, meme_query[-1]])
+    meme_query = message.text.strip().split()
+    mem = db.sql_exec(db.sel_meme_text, [cid, meme_query[-1].lower()])
 
     if len(mem) != 0:
-        bot.send_message(cid, 'Мем "{}" в вашем чате уже существует!'.format(meme_query[-1]))
+        bot.send_message(cid, 'Мем "{}" в вашем чате уже существует!'.format(meme_query[-1].lower()))
         return
 
     # /meme_add /https.... meme_name
@@ -309,12 +309,12 @@ def meme_del(message):
     cid = message.chat.id
     bot.send_chat_action(cid, 'typing')
 
-    meme_query = message.text.lower().strip().split()
+    meme_query = message.text.strip().split()
 
     if len(meme_query) != 2:
         bot.send_message(cid, 'Для удаления мне нужно только название!')
     else:
-        res = db.sql_exec(db.del_meme_text, [cid, meme_query[-1]])
+        res = db.sql_exec(db.del_meme_text, [cid, meme_query[-1].lower()])
         if res != 'ERROR!':
             bot.send_message(cid, 'Если такой мем и был в вашем чате, то он удалён!')
         else:
@@ -328,7 +328,7 @@ def meme(message):
     cid = message.chat.id
     bot.send_chat_action(cid, 'typing')
 
-    meme_query = message.text.lower().strip().split()
+    meme_query = message.text.strip().split()
 
     if len(meme_query) == 1:
         res = db.sql_exec("""SELECT name FROM MEME WHERE chat_id = ?""", [cid])
@@ -342,9 +342,9 @@ def meme(message):
     elif len(meme_query) != 2:
         bot.send_message(cid, 'Мне нужно только название мема!')
     else:
-        mem = db.sql_exec(db.sel_meme_text, [cid, meme_query[-1]])
+        mem = db.sql_exec(db.sel_meme_text, [cid, meme_query[-1].lower()])
         if len(mem) == 0:
-            bot.send_message(cid, 'Мем "{}" не существует в вашем чате!'.format(meme_query[-1]))
+            bot.send_message(cid, 'Мем "{}" не существует в вашем чате!'.format(meme_query[-1].lower()))
         else:
             bot.send_message(cid, mem[0][3])
 
