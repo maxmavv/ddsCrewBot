@@ -365,8 +365,8 @@ def meme_add(message):
     if len(meme_query) == 3:
         res = db.sql_exec(db.ins_meme_text, [cid, meme_query[-1].strip(), 'lnk', meme_query[1].strip()])
         if res != 'ERROR!':
-            bot.send_message(cid, 'Добавил мем "{}" в ваш чат!\nВы можете показать мем с помощью команды' +
-                             '\n/meme {}'.format(meme_query[-1], meme_query[-1]))
+            bot.send_message(cid, 'Добавил мем "{}" в ваш чат!\nВы можете показать мем с помощью команды'.format(meme_query[-1]) +
+                             '\n/meme {}'.format(meme_query[-1]))
         else:
             bot.send_message(cid, 'Какая-то ошибка при добовлении мема... Пусть розробочик посмотит в логи!')
     else:
