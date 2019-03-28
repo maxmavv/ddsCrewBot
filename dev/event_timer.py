@@ -208,6 +208,12 @@ def one_hour_timer(bot):
                 send_msg(bot, random.choice(cfg.gm_text))
                 send_msg(bot, '/pidor@SublimeBot')
 
+            # напоминание о голосовании за обед
+            if str(time_now.time().hour) == '11':
+                chatUsers = call_all()
+                for cid, msg in chatUsers.items():
+                    send_msg(bot, msg + random.choice(cfg.vote_notif_text), cid)
+
             # обед
             if str(time_now.time().hour) == '12':
                 chatUsers = call_all()
@@ -257,7 +263,7 @@ def one_hour_timer(bot):
                 send_msg(bot, random.choice(cfg.bb_text))
 
             # в определённое время намекать на попить
-            if str(time_now.time().hour) in ('11', '14', '16', '18'):
+            if str(time_now.time().hour) in ('11', '15', '17', '18'):
                 send_msg(bot, random.choice(cfg.pitb_text))
         # выходные
         elif time_now.weekday() == 6:
