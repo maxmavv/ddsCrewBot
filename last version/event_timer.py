@@ -36,13 +36,7 @@ def check_metadata(bot):
     meta = db.sql_exec("""SELECT * FROM METADATA
             WHERE operation in (0, 1) and is_success_flg = ?""", [1])
 
-    # meta = db.sql_exec(db.sel_operation_meta_text, [0, 1])
-    # meta.extend(db.sql_exec(db.sel_operation_meta_text, [1, 1]))
-    # meta = db.sql_exec(db.sel_operation_meta_text, [(0, 1), 1])
-
     for m in meta:
-        # print(m)
-
         # '%Y-%m-%d %H:%M:%S'
         dttm = datetime.datetime.strptime(m[6], '%Y-%m-%d %H:%M:%S')
 
@@ -50,29 +44,27 @@ def check_metadata(bot):
             # штрафы
             if m[1] == 0:
                 print(m)
-                if m[4] >= 0:
-                    # вычисляем дату исполнения
-                    hh = 72
-                    if time_now.weekday() in (3, 4):
-                        hh = 120
-                    elif time_now.weekday() == 5:
-                        hh = 96
-
-                    delta = datetime.timedelta(hours=hh, minutes=5)
-                    # delta = datetime.timedelta(seconds=10)
-                    expire_date = time_now + delta
-
-                    db.sql_exec(db.ins_operation_meta_text,
-                                [cfg.max_id_rk, 0, m[2], m[3], - int(m[4]),
-                                 str(time_now)[:-7], str(expire_date)[:-7], 1])
-                    cfg.max_id_rk += 1
-
                 user = db.sql_exec(db.sel_election_text, [m[2], m[3]])
                 if len(user) == 0:
                     # обновляем строку в метаданных как ошибочную
                     db.sql_exec(db.upd_operation_meta_text, [2, m[0]])
                     print('!!! ОШИБКА, НЕТ ЮЗЕРА В БАЗЕ ДЛЯ ' + str(m[2]) + ' ' + str(m[3]) + ' !!!')
                 else:
+                    if m[4] >= 0:
+                        hh = 48
+                        if dttm.weekday() in (4, 5):
+                            hh = 96
+                        if dttm.weekday() == 6:
+                            hh = 72
+
+                        delta = datetime.timedelta(hours=hh, minutes=5)
+                        expire_date = time_now + delta
+
+                        db.sql_exec(db.ins_operation_meta_text,
+                                    [cfg.max_id_rk, 0, m[2], m[3], - int(m[4]),
+                                     str(time_now)[:-7], str(expire_date)[:-7], 1])
+                        cfg.max_id_rk += 1
+
                     penalty = int(user[0][3]) + int(m[4])
 
                     if penalty < 0:
@@ -84,9 +76,6 @@ def check_metadata(bot):
                     db.sql_exec(db.upd_election_penalty_text, [penalty, m[2], m[3]])
                     # обновляем строку в метаданных как успешно отработавшую
                     db.sql_exec(db.upd_operation_meta_text, [0, m[0]])
-
-                print(db.sql_exec("""SELECT * FROM METADATA""", []))
-                print(db.sql_exec("""SELECT * FROM ELECTION""", []))
             # воронков
             elif m[1] == 1:
                 dttmt = dttm.time()
@@ -125,7 +114,7 @@ def voronkov_timer(bot, meta):
     # print(meta)
 
     user = db.sql_exec(db.sel_text, [meta[2], meta[3]])
-    # print(user)
+
     if user == []:
         users = db.sql_exec(db.sel_all_text, [meta[2]])
         if users != []:
@@ -153,7 +142,6 @@ def voronkov_timer(bot, meta):
 
     # обновляем строку в метаданных как успешно отработавшую
     db.sql_exec(db.upd_operation_meta_text, [0, meta[0]])
-    # print(db.sql_exec("""SELECT * FROM METADATA""", []))
 
 
 @cfg.loglog(command='one_hour_timer', type='bot')
@@ -203,15 +191,51 @@ def one_hour_timer(bot):
                 send_msg(bot, random.choice(cfg.gm_text))
                 send_msg(bot, '/pidor@SublimeBot')
 
+            # напоминание о голосовании за обед
+            if str(time_now.time().hour) == '11':
+                chatUsers = call_all()
+                for cid, msg in chatUsers.items():
+                    send_msg(bot, msg + random.choice(cfg.vote_notif_text), cid)
+
             # обед
             if str(time_now.time().hour) == '12':
                 chatUsers = call_all()
                 for cid, msg in chatUsers.items():
+                    if time_now.weekday() == 0:
+                        cfg.dinner_time = cfg.dinner_default_time
+                        cfg.dinner_time = datetime.timedelta(hours=cfg.dinner_time[0],
+                                                             minutes=cfg.dinner_time[1])
+                        cfg.show_din_time = str(cfg.dinner_time)[:-3]
+
+                        elec = db.sql_exec(db.sel_election_penalty_B_text, [])
+
+                        final_elec_time = 0
+                        for part in elec:
+                            elec_time = int(part[2])
+                            pen_time = int(part[3])
+
+                            sign = elec_time / abs(elec_time)
+                            tmp_time = elec_time - sign * pen_time
+
+                            if abs(tmp_time) > 25:
+                                tmp_time = sign * 25
+
+                            if sign * tmp_time < 0:
+                                tmp_time = 0
+
+                            final_elec_time += tmp_time
+
+                        final_elec_time = datetime.timedelta(minutes=final_elec_time)
+                        cfg.dinner_time += final_elec_time
+                        cfg.show_din_time = str(cfg.dinner_time)[:-3]
+
                     send_msg(bot, msg + random.choice(cfg.dinner_text) + cfg.show_din_time, cid)
                     # сохраняем историю голосования
                     db.sql_exec(db.colect_election_hist_text, [str(time_now.date())])
                     # обнуляем время голосования
                     db.sql_exec(db.reset_election_time_text, [0])
+                    # обнуляем время штрафЬ
+                    db.sql_exec(db.reset_penalty_B_time_text, [0])
 
             # # намёк покушать
             # if str(time_now.time().hour) == '17':
@@ -222,7 +246,7 @@ def one_hour_timer(bot):
                 send_msg(bot, random.choice(cfg.bb_text))
 
             # в определённое время намекать на попить
-            if str(time_now.time().hour) in ('11', '14', '16', '18'):
+            if str(time_now.time().hour) in ('11', '15', '17', '18'):
                 send_msg(bot, random.choice(cfg.pitb_text))
         # выходные
         elif time_now.weekday() == 6:

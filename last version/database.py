@@ -17,7 +17,8 @@ ct_election_text = """CREATE TABLE IF NOT EXISTS ELECTION
             chat_id integer,
             participant_id integer,
             elec_time integer,
-            penalty_time integer
+            penalty_time integer,
+            penalty_B_time integer
             );"""
 
 ct_election_hist_text = """CREATE TABLE IF NOT EXISTS ELECTION_HIST
@@ -46,9 +47,19 @@ ct_metadata_text = """CREATE TABLE IF NOT EXISTS METADATA
             is_success_flg integer
             );"""
 
+ct_meme_text = """CREATE TABLE IF NOT EXISTS MEME
+            (
+            chat_id integer,
+            name text,
+            type text,
+            value text
+            );"""
+
+
 ins_lj_participant_election_text = """INSERT INTO ELECTION
             SELECT part.chat_id, part.participant_id,
-            cast(0 as integer), cast(0 as integer)
+            cast(0 as integer) as elec_time, cast(0 as integer) as penalty_time,
+            cast(0 as integer) as penalty_B_time
             FROM
             PARTICIPANT AS part LEFT JOIN ELECTION as elec
             on (part.chat_id = elec.chat_id and
@@ -82,10 +93,24 @@ upd_election_penalty_text = """UPDATE ELECTION
             SET penalty_time = ?
             WHERE chat_id = ? and participant_id = ?;"""
 
+upd_election_penalty_B_text = """UPDATE ELECTION
+            SET penalty_B_time = penalty_B_time + 1
+            WHERE chat_id = ? and participant_id = ?;"""
+
+sel_election_penalty_B_text = """SELECT chat_id, participant_id, elec_time,
+            (penalty_time + penalty_B_time) FROM ELECTION
+            WHERE elec_time <> 0"""
+
 reset_election_time_text = """UPDATE ELECTION SET elec_time = ?;"""
 
+reset_penalty_B_time_text = """UPDATE ELECTION SET penalty_B_time = ?;"""
+
+# colect_election_hist_text = """INSERT INTO ELECTION_HIST
+#             SELECT elc.*, cast(? as text) FROM ELECTION as elc;"""
+
 colect_election_hist_text = """INSERT INTO ELECTION_HIST
-                            SELECT elc.*, cast(? as text) FROM ELECTION as elc;"""
+            SELECT elec.chat_id, elec.participant_id, elec.elec_time, elec.penalty_time,
+            cast(? as text) FROM ELECTION as elc;"""
 
 sel_chatID_text = """SELECT * FROM CHAT_ID WHERE chat_id = ?;"""
 
@@ -102,11 +127,18 @@ ins_operation_meta_text = """INSERT INTO METADATA
 sel_max_id_rk_meta_text = """SELECT max(id_rk) FROM METADATA"""
 
 sel_operation_meta_text = """SELECT * FROM METADATA
-            WHERE operation in (?) and is_success_flg = ?"""
+            WHERE operation = ? and is_success_flg = ?"""
 
 upd_operation_meta_text = """UPDATE METADATA
             SET is_success_flg = ?
             WHERE id_rk = ?"""
+
+sel_meme_text = """SELECT * FROM MEME WHERE chat_id = ? AND name = ?;"""
+
+ins_meme_text = """INSERT INTO MEME
+            VALUES (?,?,?,?);"""
+
+del_meme_text = """DELETE FROM MEME WHERE chat_id = ? AND name = ?;"""
 
 
 # создать таблицу
@@ -124,32 +156,22 @@ def create_table():
     cursor.execute(ct_chatID_text)
     # таблица метаданных операций
     cursor.execute(ct_metadata_text)
+    # таблица мемов
+    cursor.execute(ct_meme_text)
     db.commit()
 
 
 # выполнить sql запрос
 @cfg.loglog(command='sql_exec', type='db_exec')
 def sql_exec(exec_text, params):
-    db = sql.connect(cfg.db_name)
-    cursor = db.cursor()
-    cursor.execute(exec_text, params)
-    db.commit()
-    return cursor.fetchall()
-
-
-# очистка таблицы голосования, ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!!!
-# sql_exec(reset_election_time_text, [0])
-# sql_exec("""UPDATE ELECTION SET penalty_time = ?;""", [0])
-# print(sql_exec("""UPDATE ELECTION set elec_time = %d""", [0]))
-# print(sql_exec("""DELETE FROM ELECTION_HIST""", []))
-
-# print(sql_exec(sel_all_text, [cfg.dds_chat_id]))
-
-# print(sql_exec("""DROP TABLE ELECTION_HIST""", []))
-# print(sql_exec(colect_election_hist_text, ['2018-09-06']))
-# print(sql_exec("""SELECT * FROM ELECTION_HIST""", []))
-
-# sql_exec("""DROP TABLE METADATA""", [])
+    try:
+        db = sql.connect(cfg.db_name)
+        cursor = db.cursor()
+        cursor.execute(exec_text, params)
+        db.commit()
+        return cursor.fetchall()
+    except Exception:
+        return 'ERROR!'
 
 
 # вставить данные в таблицу participant and election
@@ -223,14 +245,4 @@ cfg.subscribed_chats_transform(sql_exec(sel_all_chatID_text, []))
 max_id_rk = sql_exec(sel_max_id_rk_meta_text, [])
 if max_id_rk[0][0] is None:
     max_id_rk = [(0,)]
-cfg.max_id_rk = max_id_rk[0][0] + 1
-
-# print(sql_exec(sel_all_text, (cfg.dds_chat_id)))
-
-
-# db = sql.connect(cfg.db_name)
-# cursor = db.cursor()
-# cursor.execute('''select * from participant;''')
-# cursor.execute('''select * from ELECTION;''')
-# print(cursor.fetchall())
-# db.commit()
+cfg.max_id_rk = int(max_id_rk[0][0]) + 1

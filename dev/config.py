@@ -205,6 +205,21 @@ week_rus = {
 }
 
 
+# def retry_bot_command(command, **args):
+def retry_bot_command(command, *args):
+    # print(args)
+    # command(**args)
+    # command(*args)
+    # command(args['chat_id'], args['text'])
+    try:
+        command(*args)
+        # print('ok')
+    except Exception as e:
+        print(e)
+        print('Попробую ещё раз')
+        command(*args)
+
+
 # функция преобразования списка подписавшихся чатов,
 # для более удобного использования
 def subscribed_chats_transform(update):
@@ -214,11 +229,38 @@ def subscribed_chats_transform(update):
 
 
 # логирование команд
+# def loglog(**command):
+#     def decorator(func):
+#         def wrapped(*msg):
+#             try:
+#                 print('##########', datetime.datetime.now(), command['command'])
+#                 if command['type'] == 'message':
+#                     print('Chat_id =', msg[0].chat.id)
+#                     print('User =', msg[0].from_user.id)
+#                 elif command['type'] in ('db_exec', 'db_common'):
+#                     print('Exec text =', msg[0])
+#                     print('Params =', msg[1])
+#                 elif command['type'] == 'sql_chatID':
+#                     print('Chat_id =', msg[0])
+
+#                 print(*msg)
+#                 res = func(*msg)
+#                 print('##########', datetime.datetime.now(), command['command'], '\n')
+#                 return res
+#             except Exception as e:
+#                 print(e)
+#                 print('Попробую ещё раз')
+#                 res = func(*msg)
+#                 return res
+#         return wrapped
+#     return decorator
+
+
+# логирование команд
 def loglog(**command):
     def decorator(func):
         def wrapped(*msg):
             print('##########', datetime.datetime.now(), command['command'])
-            # print('### Команда', command['command'])
             if command['type'] == 'message':
                 print('Chat_id =', msg[0].chat.id)
                 print('User =', msg[0].from_user.id)
@@ -229,7 +271,6 @@ def loglog(**command):
                 print('Chat_id =', msg[0])
 
             res = func(*msg)
-            # print('Конец команды', command['command'])
             print('##########', datetime.datetime.now(), command['command'], '\n')
             return res
         return wrapped
