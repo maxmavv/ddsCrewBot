@@ -181,39 +181,33 @@ def ping_all(message):
         bot.send_message(cid, call_text.strip() + message.text[4:])
 
 
-# # подбросить монетку
-# @bot.message_handler(commands=['coin'])
-# @cfg.loglog(command='coin', type='message')
-# def throw_coin(message):
-#     cid = message.chat.id
-#     bot.send_message(cid, random.choice(cfg.precomand_text))
-#     bot.send_chat_action(cid, 'typing')
-#     time.sleep(1)
-
-#     bot.send_message(cid, random.choice(cfg.coin_var))
-
 # подбросить монетку
-@retrying.retry(stop_max_attempt_number=3, wait_random_min=1000, wait_random_max=2000)
 @bot.message_handler(commands=['coin'])
 @cfg.loglog(command='coin', type='message')
 def throw_coin(message):
     cid = message.chat.id
-    # cfg.retry_bot_command({'chat_id': cid, 'text': random.choice(cfg.precomand_text)})
-    # cfg.retry_bot_command(bot.send_message, chat_id=cid, text=random.choice(cfg.precomand_text))
-    cfg.retry_bot_command(bot.send_message, cid, random.choice(cfg.precomand_text))
-    # cfg.retry_bot_command(bot.send_message, (cid, random.choice(cfg.precomand_text)))
-    # cfg.retry_bot_command(bot.send_message, {'chat_id': cid, 'text': random.choice(cfg.precomand_text)})
-    # cfg.retry_bot_command(bot.send_message(cid, random.choice(cfg.precomand_text)), (cid, random.choice(cfg.precomand_text)))
-    # cfg.retry_bot_command(bot.send_chat_action, (cid, 'typing'))
+    bot.send_message(cid, random.choice(cfg.precomand_text))
+    bot.send_chat_action(cid, 'typing')
     time.sleep(1)
 
-    cfg.retry_bot_command(bot.send_message, cid, random.choice(cfg.coin_var))
+    bot.send_message(cid, random.choice(cfg.coin_var))
+
+# # подбросить монетку
+# @bot.message_handler(commands=['coin'])
+# @cfg.loglog(command='coin', type='message')
+# @retrying.retry(stop_max_attempt_number=3, wait_random_min=1000, wait_random_max=2000)
+# def throw_coin(message):
+#     cid = message.chat.id
+#     cfg.retry_bot_command(bot.send_message, cid, random.choice(cfg.precomand_text))
+#     time.sleep(1)
+
+#     cfg.retry_bot_command(bot.send_message, cid, random.choice(cfg.coin_var))
 
 
 # подбросить кубик
-@retrying.retry(stop_max_attempt_number=3, wait_random_min=1000, wait_random_max=2000)
 @bot.message_handler(commands=['dice'])
 @cfg.loglog(command='dice', type='message')
+@retrying.retry(stop_max_attempt_number=3, wait_random_min=1000, wait_random_max=2000)
 def throw_dice(message):
     cid = message.chat.id
     bot.send_message(cid, random.choice(cfg.precomand_text))

@@ -205,15 +205,10 @@ week_rus = {
 }
 
 
-# def retry_bot_command(command, **args):
+# функция для повторения команды бота при выкидывании исключения
 def retry_bot_command(command, *args):
-    # print(args)
-    # command(**args)
-    # command(*args)
-    # command(args['chat_id'], args['text'])
     try:
         command(*args)
-        # print('ok')
     except Exception as e:
         print(e)
         print('Попробую ещё раз')
@@ -226,34 +221,6 @@ def subscribed_chats_transform(update):
     subscribed_chats.clear()
     for i in update:
         subscribed_chats.append(i[0])
-
-
-# логирование команд
-# def loglog(**command):
-#     def decorator(func):
-#         def wrapped(*msg):
-#             try:
-#                 print('##########', datetime.datetime.now(), command['command'])
-#                 if command['type'] == 'message':
-#                     print('Chat_id =', msg[0].chat.id)
-#                     print('User =', msg[0].from_user.id)
-#                 elif command['type'] in ('db_exec', 'db_common'):
-#                     print('Exec text =', msg[0])
-#                     print('Params =', msg[1])
-#                 elif command['type'] == 'sql_chatID':
-#                     print('Chat_id =', msg[0])
-
-#                 print(*msg)
-#                 res = func(*msg)
-#                 print('##########', datetime.datetime.now(), command['command'], '\n')
-#                 return res
-#             except Exception as e:
-#                 print(e)
-#                 print('Попробую ещё раз')
-#                 res = func(*msg)
-#                 return res
-#         return wrapped
-#     return decorator
 
 
 # логирование команд
