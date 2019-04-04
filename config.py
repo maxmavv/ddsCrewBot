@@ -99,6 +99,13 @@ max_id_rk = 0
 # флаг ошибки метаданных
 meta_error_flg = 0
 
+# максимальное количество попыток перезапуска комады
+max_att = 3
+# минимальное время ожидания между попытками
+w_min = 500
+# максимальное время ожидания между попытками
+w_max = 1500
+
 # стикер кот-ебан file_id
 stiker_kot_eban = 'CAADBAADcAAD-OAEAsKXeIPkd1o3Ag'
 
@@ -218,7 +225,6 @@ def loglog(**command):
     def decorator(func):
         def wrapped(*msg):
             print('##########', datetime.datetime.now(), command['command'])
-            # print('### Команда', command['command'])
             if command['type'] == 'message':
                 print('Chat_id =', msg[0].chat.id)
                 print('User =', msg[0].from_user.id)
@@ -229,7 +235,6 @@ def loglog(**command):
                 print('Chat_id =', msg[0])
 
             res = func(*msg)
-            # print('Конец команды', command['command'])
             print('##########', datetime.datetime.now(), command['command'], '\n')
             return res
         return wrapped
