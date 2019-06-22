@@ -115,7 +115,7 @@ colect_election_hist_text = """INSERT INTO ELECTION_HIST
 sel_chatID_text = """SELECT * FROM CHAT_ID WHERE chat_id = ?;"""
 
 ins_chatID_text = """INSERT INTO CHAT_ID
-                    VALUES (?);"""
+            VALUES (?);"""
 
 del_chatID_text = """DELETE FROM CHAT_ID WHERE chat_id = ?;"""
 
@@ -172,6 +172,18 @@ def sql_exec(exec_text, params):
         return cursor.fetchall()
     except Exception:
         return 'ERROR!'
+
+
+# очистка таблицы голосования, ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!!!
+# sql_exec(reset_election_time_text, [0])
+# sql_exec("""UPDATE ELECTION SET penalty_time = ?;""", [0])
+# print(sql_exec("""DELETE FROM ELECTION_HIST""", []))
+
+# print(sql_exec("""DROP TABLE ELECTION_HIST""", []))
+# print(sql_exec(colect_election_hist_text, ['2018-09-06']))
+# print(sql_exec("""SELECT * FROM ELECTION_HIST""", []))
+
+# sql_exec("""DROP TABLE METADATA""", [])
 
 
 # вставить данные в таблицу participant and election
@@ -246,3 +258,11 @@ max_id_rk = sql_exec(sel_max_id_rk_meta_text, [])
 if max_id_rk[0][0] is None:
     max_id_rk = [(0,)]
 cfg.max_id_rk = int(max_id_rk[0][0]) + 1
+
+
+# db = sql.connect(cfg.db_name)
+# cursor = db.cursor()
+# cursor.execute('''select * from participant;''')
+# cursor.execute('''select * from ELECTION;''')
+# print(cursor.fetchall())
+# db.commit()

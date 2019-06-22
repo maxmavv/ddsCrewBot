@@ -10,6 +10,7 @@ import random
 import event_timer as evt
 import webhook
 import adminId
+import retrying
 
 random.seed(time.clock())
 
@@ -31,6 +32,7 @@ evt.check_metadata(bot)
 # приветствие
 @bot.message_handler(commands=['start', 'help'])
 @cfg.loglog(command='start/help', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def send_welcome(message):
     cid = message.chat.id
     bot.send_message(cid, cfg.hello_msg)
@@ -39,6 +41,7 @@ def send_welcome(message):
 # меню в муму
 @bot.message_handler(commands=['chto_v_mumu'])
 @cfg.loglog(command='chto_v_mumu', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def send_mumu(message):
     cid = message.chat.id
     bot.send_chat_action(cid, 'typing')
@@ -54,6 +57,7 @@ def send_mumu(message):
 # регистрируем человека в списке участников чата по его запросу
 @bot.message_handler(commands=['subscribe'])
 @cfg.loglog(command='subscribe', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def subscribe(message):
     cid = message.chat.id
     bot.send_chat_action(cid, 'typing')
@@ -68,6 +72,7 @@ def subscribe(message):
 # удаляем человека из списка участников чата по его запросу
 @bot.message_handler(commands=['unsubscribe'])
 @cfg.loglog(command='unsubscribe', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def unsubscribe(message):
     cid = message.chat.id
     bot.send_chat_action(cid, 'typing')
@@ -79,6 +84,7 @@ def unsubscribe(message):
 # регистрируем чат в рассылки на сообщения ботом
 @bot.message_handler(commands=['admin_subscribe_chat'])
 @cfg.loglog(command='admin_subscribe_chat', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def admin_subscribe_chat(message):
     cid = message.chat.id
     res = db.insert_into_chatID(cid)
@@ -91,6 +97,7 @@ def admin_subscribe_chat(message):
 # удаляем чат из рассылки на сообщения ботом
 @bot.message_handler(commands=['admin_unsubscribe_chat'])
 @cfg.loglog(command='admin_unsubscribe_chat', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def admin_unsubscribe_chat(message):
     cid = message.chat.id
     db.delete_from_chatID(cid)
@@ -100,6 +107,7 @@ def admin_unsubscribe_chat(message):
 # призвать всех
 @bot.message_handler(commands=['all'])
 @cfg.loglog(command='all', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def ping_all(message):
     cid = message.chat.id
     bot.send_chat_action(cid, 'typing')
@@ -122,6 +130,7 @@ def ping_all(message):
 # подбросить монетку
 @bot.message_handler(commands=['coin'])
 @cfg.loglog(command='coin', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def throw_coin(message):
     cid = message.chat.id
     bot.send_message(cid, random.choice(cfg.precomand_text))
@@ -134,6 +143,7 @@ def throw_coin(message):
 # подбросить кубик
 @bot.message_handler(commands=['dice'])
 @cfg.loglog(command='dice', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def throw_dice(message):
     cid = message.chat.id
     bot.send_message(cid, random.choice(cfg.precomand_text))
@@ -149,6 +159,7 @@ def throw_dice(message):
 # магический шар
 @bot.message_handler(commands=['ball'])
 @cfg.loglog(command='ball', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def magic_ball(message):
     cid = message.chat.id
     bot.send_message(cid, random.choice(cfg.precomand_ball))
@@ -161,6 +172,7 @@ def magic_ball(message):
 # показать время обеда
 @bot.message_handler(commands=['dinner'])
 @cfg.loglog(command='dinner', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def show_dinner_time(message):
     cid = message.chat.id
     bot.send_message(cid, random.choice(cfg.dinner_text) + '*' + cfg.show_din_time + '*',
@@ -170,6 +182,7 @@ def show_dinner_time(message):
 # сделать SQL запрос
 @bot.message_handler(commands=['sqlsql'])
 @cfg.loglog(command='sqlsql', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def sqlsql(message):
     cid = message.chat.id
     user = message.from_user.id
@@ -197,6 +210,7 @@ def sqlsql(message):
 # показать/оставить штрафы
 @bot.message_handler(commands=['penalty'])
 @cfg.loglog(command='penalty', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def penalty(message):
     time_now = datetime.datetime.now()
     cid = message.chat.id
@@ -278,6 +292,7 @@ def penalty(message):
 # добавить мем
 @bot.message_handler(commands=['meme_add'])
 @cfg.loglog(command='meme_add', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def meme_add(message):
     cid = message.chat.id
     # user = message.from_user.id
@@ -305,6 +320,7 @@ def meme_add(message):
 # удалить мем
 @bot.message_handler(commands=['meme_del'])
 @cfg.loglog(command='meme_del', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def meme_del(message):
     cid = message.chat.id
     bot.send_chat_action(cid, 'typing')
@@ -324,6 +340,7 @@ def meme_del(message):
 # мемы
 @bot.message_handler(commands=['meme'])
 @cfg.loglog(command='meme', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def meme(message):
     cid = message.chat.id
     bot.send_chat_action(cid, 'typing')
@@ -368,6 +385,7 @@ def meme(message):
 
 @bot.message_handler(content_types=["text"])
 @cfg.loglog(command='text_parser', type='message')
+@retrying.retry(stop_max_attempt_number=cfg.max_att, wait_random_min=cfg.w_min, wait_random_max=cfg.w_max)
 def text_parser(message):
     week_day = datetime.datetime.today().weekday()
     # нужно брать дату из даты сообщения

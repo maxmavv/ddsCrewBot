@@ -9,13 +9,16 @@ random.seed(datetime.datetime.now().time().second)
 
 
 @cfg.loglog(command='call_all', type='bot')
-def call_all():
+def call_all(query=db.sel_all_text):
     chatUsers = {}
     for cid in cfg.subscribed_chats:
-        users = db.sql_exec(db.sel_all_text, (cid,))
+        users = db.sql_exec(query, [cid])
+        if users == []:
+            continue
         call_users = 'Эй, @all: '
         for i in users:
-            call_users += '@' + str(i[4]) + ' '
+            # call_users += '@' + str(i[4]) + ' '
+            call_users += '@' + str(i[0]) + ' '
         chatUsers[cid] = call_users.strip() + '\n'
     return chatUsers
 
@@ -142,7 +145,8 @@ def voronkov_timer(bot, meta):
             print('!!! ОШИБКА, НЕТ ЮЗЕРОВ В БАЗЕ ДЛЯ CHAT_ID = ' + str(meta[2]) + ' !!!')
             return
 
-    user = '@' + user[0][4]
+    # user = '@' + user[0][4]
+    user = '@' + user[0][0]
 
     scenario = random.choice(cfg.voronkov_text)
     print(scenario)
@@ -209,8 +213,13 @@ def one_hour_timer(bot):
                 send_msg(bot, '/pidor@SublimeBot')
 
             # напоминание о голосовании за обед
+            # if str(time_now.time().hour) == '11':
+            #     chatUsers = call_all()
+            #     for cid, msg in chatUsers.items():
+            #         send_msg(bot, msg + random.choice(cfg.vote_notif_text), cid)
+
             if str(time_now.time().hour) == '11':
-                chatUsers = call_all()
+                chatUsers = call_all(db.sel_nonvoted_users_text)
                 for cid, msg in chatUsers.items():
                     send_msg(bot, msg + random.choice(cfg.vote_notif_text), cid)
 
@@ -286,7 +295,7 @@ def one_hour_timer(bot):
                 expire_date = time_now + delta
 
                 for cid in cfg.subscribed_chats:
-                    users = db.sql_exec(db.sel_all_text, (cid,))
+                    users = db.sql_exec(db.sel_all_text, [cid])
                     if users != []:
                         call_user = random.choice(users)[1]
 

@@ -6,3 +6,4 @@ sendlogbot.py
 __pycache__/*
 *.pem
 log*
+how_to_start.txt

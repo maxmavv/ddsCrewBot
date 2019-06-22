@@ -61,13 +61,13 @@ ins_lj_participant_election_text = """INSERT INTO ELECTION
             cast(0 as integer) as elec_time, cast(0 as integer) as penalty_time,
             cast(0 as integer) as penalty_B_time
             FROM
-            PARTICIPANT AS part LEFT JOIN ELECTION as elec
+            PARTICIPANT as part LEFT JOIN ELECTION as elec
             on (part.chat_id = elec.chat_id and
             part.participant_id = elec.participant_id)
             WHERE elec.participant_id is NULL;"""
 
 sel_all_penalty_time_text = """SELECT part.participant_username, elec.penalty_time, part.participant_id
-            FROM ELECTION AS elec JOIN PARTICIPANT as part
+            FROM ELECTION as elec JOIN PARTICIPANT as part
             on (part.chat_id = ? and part.chat_id = elec.chat_id and
             part.participant_id = elec.participant_id);"""
 
@@ -79,9 +79,12 @@ del_text = """DELETE FROM PARTICIPANT WHERE chat_id = ? and participant_id = ?;"
 
 del_election_text = """DELETE FROM ELECTION WHERE chat_id = ? and participant_id = ?;"""
 
-sel_all_text = """SELECT * FROM PARTICIPANT WHERE chat_id = ?;"""
+# sel_all_text = """SELECT * FROM PARTICIPANT WHERE chat_id = ?;"""
+sel_all_text = """SELECT participant_username, participant_id FROM PARTICIPANT WHERE chat_id = ?;"""
 
-sel_text = """SELECT * FROM PARTICIPANT WHERE chat_id = ? and participant_id = ?;"""
+# sel_text = """SELECT * FROM PARTICIPANT WHERE chat_id = ? and participant_id = ?;"""
+sel_text = """SELECT participant_username, participant_id
+            FROM PARTICIPANT WHERE chat_id = ? and participant_id = ?;"""
 
 sel_election_text = """SELECT * FROM ELECTION WHERE chat_id = ? and participant_id = ?;"""
 
@@ -105,12 +108,15 @@ reset_election_time_text = """UPDATE ELECTION SET elec_time = ?;"""
 
 reset_penalty_B_time_text = """UPDATE ELECTION SET penalty_B_time = ?;"""
 
-# colect_election_hist_text = """INSERT INTO ELECTION_HIST
-#             SELECT elc.*, cast(? as text) FROM ELECTION as elc;"""
-
 colect_election_hist_text = """INSERT INTO ELECTION_HIST
             SELECT elec.chat_id, elec.participant_id, elec.elec_time, elec.penalty_time,
             cast(? as text) FROM ELECTION as elc;"""
+
+sel_nonvoted_users_text = """SELECT part.participant_username
+            FROM ELECTION as elec JOIN PARTICIPANT as part
+            on (part.chat_id = elec.chat_id and
+            part.participant_id = elec.participant_id)
+            WHERE elec.elec_time = 0 and elec.chat_id = ?;"""
 
 sel_chatID_text = """SELECT * FROM CHAT_ID WHERE chat_id = ?;"""
 

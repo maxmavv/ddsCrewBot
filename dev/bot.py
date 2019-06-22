@@ -76,6 +76,19 @@ evt.check_metadata(bot)
 # evt.check_metadata(bot)
 
 
+# evt.voronkov_timer(bot, [0, 1, 230563389, 230563389])
+
+# db.sql_exec(db.reset_election_time_text, [1])
+
+# print('!!!', evt.call_all())
+
+# print('???', evt.call_all(db.sel_nonvoted_users_text))
+
+# chatUsers = evt.call_all(db.sel_nonvoted_users_text)
+# for cid, msg in chatUsers.items():
+#     bot.send_message(cid, msg + random.choice(cfg.vote_notif_text))
+
+
 # стучимся к серверам ТГ, если не пускает
 def telegram_polling():
     try:
@@ -179,7 +192,8 @@ def ping_all(message):
     for i in users:
         # если юзер не тот, кто вызывал all, уведомляем его
         if i[1] != user_id:
-            call_text = call_text + '@' + str(i[4]) + ' '
+            # call_text = call_text + '@' + str(i[4]) + ' '
+            call_text = call_text + '@' + str(i[0]) + ' '
 
     # проверка на /all@ddsCrewBot
     if (message.text[0:15] == '/all@ddsCrewBot'):

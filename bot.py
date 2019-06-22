@@ -118,7 +118,7 @@ def ping_all(message):
     for i in users:
         # если юзер не тот, кто вызывал all, уведомляем его
         if i[1] != user_id:
-            call_text = call_text + '@' + str(i[4]) + ' '
+            call_text = call_text + '@' + str(i[0]) + ' '
 
     # проверка на /all@ddsCrewBot
     if (message.text[0:15] == '/all@ddsCrewBot'):
