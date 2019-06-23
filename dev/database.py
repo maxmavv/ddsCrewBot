@@ -132,6 +132,8 @@ ins_operation_meta_text = """INSERT INTO METADATA
 
 sel_max_id_rk_meta_text = """SELECT max(id_rk) FROM METADATA"""
 
+sel_meta_by_rk = """SELECT * FROM METADATA WHERE id_rk = ?"""
+
 sel_operation_meta_text = """SELECT * FROM METADATA
             WHERE operation = ? and is_success_flg = ?"""
 

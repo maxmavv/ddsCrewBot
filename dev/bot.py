@@ -311,7 +311,7 @@ def penalty(message):
     if (len(cmd) == 3) and (cmd[1].lower() == 'cancel') and (cmd[2].isdigit()):
         # отмена штрафа
         rk = int(cmd[2])
-        meta = db.sql_exec("""SELECT * FROM METADATA WHERE id_rk = ?""", [rk])
+        meta = db.sql_exec(db.sel_meta_by_rk, [rk])
 
         if len(meta) == 0:
             bot.send_message(cid, 'Штрафа с таким номером не существует!')
