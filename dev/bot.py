@@ -88,6 +88,13 @@ evt.check_metadata(bot)
 # for cid, msg in chatUsers.items():
 #     bot.send_message(cid, msg + random.choice(cfg.vote_notif_text))
 
+# chatUsers = evt.call_all(db.sel_nonvoted_users_text)
+# for cid, msg in chatUsers.items():
+#     if msg == '':
+#         bot.send_message(cid, random.choice(cfg.vote_notif_text))
+#     else:
+#         bot.send_message(cid, msg + random.choice(cfg.vote_notif_text))
+
 
 # стучимся к серверам ТГ, если не пускает
 def telegram_polling():

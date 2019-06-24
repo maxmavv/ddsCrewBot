@@ -14,6 +14,7 @@ def call_all(query=db.sel_all_text):
     for cid in cfg.subscribed_chats:
         users = db.sql_exec(query, [cid])
         if users == []:
+            chatUsers[cid] = ''
             continue
         call_users = 'Эй, @all: '
         for i in users:
@@ -213,15 +214,13 @@ def one_hour_timer(bot):
                 send_msg(bot, '/pidor@SublimeBot')
 
             # напоминание о голосовании за обед
-            # if str(time_now.time().hour) == '11':
-            #     chatUsers = call_all()
-            #     for cid, msg in chatUsers.items():
-            #         send_msg(bot, msg + random.choice(cfg.vote_notif_text), cid)
-
             if str(time_now.time().hour) == '11':
                 chatUsers = call_all(db.sel_nonvoted_users_text)
                 for cid, msg in chatUsers.items():
-                    send_msg(bot, msg + random.choice(cfg.vote_notif_text), cid)
+                    if msg == '':
+                        send_msg(bot, random.choice(cfg.success_vote_notif_text), cid)
+                    else:
+                        send_msg(bot, msg + random.choice(cfg.vote_notif_text), cid)
 
             # обед
             if str(time_now.time().hour) == '12':
@@ -255,7 +254,10 @@ def one_hour_timer(bot):
                         cfg.dinner_time += final_elec_time
                         cfg.show_din_time = str(cfg.dinner_time)[:-3]
 
-                    send_msg(bot, msg + random.choice(cfg.dinner_text) + cfg.show_din_time, cid)
+                    if msg == '':
+                        send_msg(bot, random.choice(cfg.dinner_text) + cfg.show_din_time, cid)
+                    else:
+                        send_msg(bot, msg + random.choice(cfg.dinner_text) + cfg.show_din_time, cid)
                     # сохраняем историю голосования
                     db.sql_exec(db.colect_election_hist_text, [str(time_now.date())])
                     # обнуляем время голосования
@@ -280,7 +282,10 @@ def one_hour_timer(bot):
             if str(time_now.time().hour) == '19':
                 chatUsers = call_all()
                 for cid, msg in chatUsers.items():
-                    send_msg(bot, msg + random.choice(cfg.dss_text), cid)
+                    if msg == '':
+                        send_msg(bot, random.choice(cfg.dss_text), cid)
+                    else:
+                        send_msg(bot, msg + random.choice(cfg.dss_text), cid)
 
             # поставить таймер на воронкова
             if str(time_now.time().hour) == '23':
