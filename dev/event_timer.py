@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import threading as th
 import datetime
 import config as cfg
@@ -138,7 +140,8 @@ def voronkov_timer(bot, meta):
     if user == []:
         users = db.sql_exec(db.sel_all_text, [meta[2]])
         if users != []:
-            user = random.choice(users)
+            # user = random.choice(users)
+            user = [random.choice(users)]
             print('! НЕТ ТЕКУЩЕГО ЮЗЕРА, БЫЛ ВЫБРАН ДРУГОЙ !')
         else:
             # обновляем строку в метаданных как ошибочную
