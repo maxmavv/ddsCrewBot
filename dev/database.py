@@ -55,6 +55,15 @@ ct_meme_text = """CREATE TABLE IF NOT EXISTS MEME
             value text
             );"""
 
+ct_meme_text = """CREATE TABLE IF NOT EXISTS MEME
+            (
+            meme_id integer,
+            chat_id integer,
+            meme_name text,
+            meme_type text,
+            meme_value text
+            );"""
+
 
 ins_lj_participant_election_text = """INSERT INTO ELECTION
             SELECT part.chat_id, part.participant_id,
