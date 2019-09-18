@@ -152,8 +152,11 @@ upd_operation_meta_text = """UPDATE METADATA
 
 sel_meme_text = """SELECT * FROM MEME WHERE chat_id = ? AND name = ?;"""
 
+# ins_meme_text = """INSERT INTO MEME
+#             VALUES (?,?,?,?);"""
+
 ins_meme_text = """INSERT INTO MEME
-            VALUES (?,?,?,?);"""
+            VALUES (?,?,?,?,?);"""
 
 del_meme_text = """DELETE FROM MEME WHERE chat_id = ? AND name = ?;"""
 

@@ -448,13 +448,15 @@ def meme(message):
     meme_query = message.text.strip().split()
 
     if len(meme_query) == 1:
-        res = db.sql_exec("""SELECT name FROM MEME WHERE chat_id = ?""", [cid])
+        # res = db.sql_exec("""SELECT name FROM MEME WHERE chat_id = ?""", [cid])
+        res = db.sql_exec("""SELECT meme_id, meme_name FROM MEME WHERE chat_id = ?""", [cid])
         if len(res) == 0:
             bot.send_message(cid, 'В вашем чате нет мемов=(\nВы можете добавить их командой /meme_add!')
         else:
             resStr = 'Мемы, добавленные в ваш чат:\n'
             for i in res:
-                resStr += '*' + str(i[0]) + '*\n'
+                # resStr += '*' + str(i[0]) + '*\n'
+                resStr += '*{}. {}*'.format(str(i[0]), str(i[1]))
             bot.send_message(cid, str(resStr), parse_mode='Markdown')
     elif len(meme_query) != 2:
         bot.send_message(cid, 'Мне нужно только название мема!')
